@@ -1,21 +1,9 @@
 #!/usr/bin/env python3
 """
-ワクスト自動投稿スクリプト (auto_post.py)
+ワクスト自動投稿スクリプト (auto_post.py) v2
 
 龍太郎さん（ryu-1992）のワクスト公開記事一覧から最新記事を取得し、
 無料部分（導入）を抽出してサイトの articles.json に追加する。
-
-動作フロー:
-1. https://wakust.com/user/ryu-1992/?sort=postd から最新記事一覧を取得
-2. 既に articles.json に登録済みの記事はスキップ
-3. 未登録の記事を最大N件、詳細ページから本文を取得
-4. 本文の無料部分を抽出して articles.json に追加
-5. 変更があればGitコミット→pushで自動デプロイ
-
-使い方:
-  python3 auto_post.py            # 本番実行
-  python3 auto_post.py --dry-run  # 追加内容の確認のみ
-  python3 auto_post.py --max 3    # 最大投稿数を指定（デフォルト3）
 """
 
 import json
@@ -29,12 +17,10 @@ from pathlib import Path
 
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
 
-# 設定
 USER_PAGE_URL = "https://wakust.com/user/ryu-1992/?sort=postd"
 ARTICLES_JSON = Path(__file__).parent / "data" / "articles.json"
-WAKUST_USER_URL = "https://wakust.com/user/ryu-1992/"
-MAX_POSTS_PER_RUN = 3  # 1回の実行で投稿する最大記事数
-EXCERPT_MAX_CHARS = 500  # サイトに載せる無料部分の最大文字数
+MAX_POSTS_PER_RUN = 3
+EXCERPT_MAX_CHARS = 500
 DEFAULT_USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -42,7 +28,6 @@ DEFAULT_USER_AGENT = (
 
 
 def load_articles():
-    """既存の記事データを読み込む"""
     if not ARTICLES_JSON.exists():
         return []
     with open(ARTICLES_JSON, "r", encoding="utf-8") as f:
@@ -50,72 +35,108 @@ def load_articles():
 
 
 def save_articles(articles):
-    """記事データを保存する"""
     ARTICLES_JSON.parent.mkdir(parents=True, exist_ok=True)
     with open(ARTICLES_JSON, "w", encoding="utf-8") as f:
         json.dump(articles, f, ensure_ascii=False, indent=2)
 
 
 def accept_age_modal(page):
-    """年齢確認モーダルを閉じる"""
+    """年齢確認モーダルを閉じる（複数パターンに対応）"""
+    time.sleep(1)
     try:
-        page.evaluate("""
+        result = page.evaluate("""
             () => {
-                const links = document.querySelectorAll('a, button');
-                for (const link of links) {
-                    const txt = (link.textContent || '').trim();
+                const clicked = [];
+
+                // 年齢確認の「はい」ボタンを探す
+                const allElements = document.querySelectorAll('a, button, span, div');
+                for (const el of allElements) {
+                    const txt = (el.textContent || '').trim();
                     if (txt === 'はい') {
-                        link.click();
-                        return true;
+                        try {
+                            el.click();
+                            clicked.push('はい');
+                            break;
+                        } catch (e) {}
                     }
                 }
-                return false;
+
+                // cookie で年齢確認を回避
+                document.cookie = 'age_check=1; path=/; domain=.wakust.com';
+                document.cookie = 'adult_check=1; path=/; domain=.wakust.com';
+
+                return clicked;
             }
         """)
-    except Exception:
-        pass
+        print(f"[DEBUG] モーダル処理: {result}")
+    except Exception as e:
+        print(f"[DEBUG] モーダル処理エラー（無視可）: {e}")
 
 
 def fetch_article_list(page):
     """クリエイターページから記事一覧を取得"""
     print(f"[INFO] 記事一覧を取得: {USER_PAGE_URL}")
-    page.goto(USER_PAGE_URL, wait_until="domcontentloaded", timeout=30000)
-    time.sleep(2)
-    accept_age_modal(page)
-    time.sleep(1)
 
-    # 記事カードを取得
+    # 事前にcookieをセット
+    page.context.add_cookies([
+        {"name": "age_check", "value": "1", "domain": ".wakust.com", "path": "/"},
+        {"name": "adult_check", "value": "1", "domain": ".wakust.com", "path": "/"},
+    ])
+
+    page.goto(USER_PAGE_URL, wait_until="networkidle", timeout=60000)
+    time.sleep(3)
+
+    accept_age_modal(page)
+    time.sleep(2)
+
+    page_title = page.title()
+    body_html_len = page.evaluate("() => document.body.innerHTML.length")
+    print(f"[DEBUG] ページタイトル: {page_title}")
+    print(f"[DEBUG] body HTML長: {body_html_len}")
+
     articles = page.evaluate("""
         () => {
             const results = [];
-            // 記事カードのリンクを抽出
-            const links = document.querySelectorAll('a[href*="/ryu-1992/"]');
             const seen = new Set();
 
-            for (const link of links) {
-                const href = link.getAttribute('href');
-                // 記事詳細URLのパターン: /ryu-1992/数字/
-                const match = href.match(/\\/ryu-1992\\/(\\d+)\\/?$/);
+            const allLinks = document.querySelectorAll('a[href]');
+
+            for (const link of allLinks) {
+                const href = link.getAttribute('href') || '';
+                const match = href.match(/\\/ryu-1992\\/(\\d{4,})\\/?(?:\\?.*)?$/);
                 if (!match) continue;
 
                 const articleId = match[1];
                 if (seen.has(articleId)) continue;
-                seen.add(articleId);
 
-                // タイトルテキストを持つリンクだけを対象にする（サムネイルリンクはスキップ）
                 const title = (link.textContent || '').trim();
                 if (!title || title.length < 5) continue;
+                if (title === 'もっと読む' || title === '続きを読む' || title === 'NEW') continue;
 
-                // 画像URLを探す (兄弟要素・親要素から)
+                seen.add(articleId);
+
                 let thumbnail = '';
-                const img = link.querySelector('img') ||
-                           (link.previousElementSibling && link.previousElementSibling.querySelector('img')) ||
-                           (link.parentElement && link.parentElement.querySelector('img'));
-                if (img) thumbnail = img.src || '';
+                const imgInLink = link.querySelector('img');
+                if (imgInLink && imgInLink.src) {
+                    thumbnail = imgInLink.src;
+                } else {
+                    const parent = link.parentElement;
+                    if (parent) {
+                        const img = parent.querySelector('img');
+                        if (img && img.src) thumbnail = img.src;
+                    }
+                    if (!thumbnail && link.previousElementSibling) {
+                        const prevImg = link.previousElementSibling.querySelector
+                            ? link.previousElementSibling.querySelector('img') : null;
+                        if (prevImg && prevImg.src) thumbnail = prevImg.src;
+                    }
+                }
+
+                const absoluteUrl = href.startsWith('http') ? href : 'https://wakust.com' + href;
 
                 results.push({
                     id: articleId,
-                    url: href.startsWith('http') ? href : 'https://wakust.com' + href,
+                    url: absoluteUrl,
                     title: title,
                     thumbnail: thumbnail
                 });
@@ -125,56 +146,50 @@ def fetch_article_list(page):
     """)
 
     print(f"[INFO] 取得した記事数: {len(articles)}件")
+    if articles:
+        print(f"[DEBUG] 最初の記事: {articles[0].get('title', '')[:50]}")
+        print(f"[DEBUG] サムネイル: {articles[0].get('thumbnail', '(なし)')}")
     return articles
 
 
 def fetch_article_detail(page, article_url):
     """記事詳細ページから本文と日付、カテゴリーを取得"""
     print(f"[INFO] 記事詳細を取得: {article_url}")
-    page.goto(article_url, wait_until="domcontentloaded", timeout=30000)
+    page.goto(article_url, wait_until="networkidle", timeout=60000)
     time.sleep(2)
     accept_age_modal(page)
-    time.sleep(1)
+    time.sleep(2)
 
     detail = page.evaluate("""
         () => {
-            // タイトル
             const titleEl = document.querySelector('h1');
             const title = titleEl ? titleEl.textContent.trim() : '';
 
-            // 投稿日（タイトル下の日付を探す）
             let dateStr = '';
-            const bodyText = document.body.innerText;
+            const bodyText = document.body.innerText || '';
             const dateMatch = bodyText.match(/(\\d{4})年(\\d{2})月(\\d{2})日/);
             if (dateMatch) {
                 dateStr = dateMatch[1] + '-' + dateMatch[2] + '-' + dateMatch[3];
             }
 
-            // カテゴリー（パンくずリストまたは記事内のカテゴリータグ）
             let area = '';
             const catLinks = document.querySelectorAll('a[href*="/post-category/"]');
             for (const el of catLinks) {
                 const txt = el.textContent.trim();
-                if (txt) {
+                if (txt && txt.length < 20) {
                     area = txt;
                     break;
                 }
             }
 
-            // 本文（無料部分のみ）
-            // 「購入する」「購入」というキーワードで切り取る
             let content = '';
-            // まずメインコンテンツエリアを特定
-            const mainArticle = document.querySelector('article') || document.querySelector('main') || document.body;
-            const mainText = mainArticle.innerText || '';
+            const mainText = bodyText;
 
-            // 「を購入する」という見出しの手前までが無料部分
             const purchaseIdx = mainText.indexOf('を購入する');
             if (purchaseIdx > 0) {
                 content = mainText.substring(0, purchaseIdx);
             } else {
-                // フォールバック: 「購入するには」の手前まで
-                const registerIdx = mainText.indexOf('購入するにはワクスト');
+                const registerIdx = mainText.indexOf('購入するには');
                 if (registerIdx > 0) {
                     content = mainText.substring(0, registerIdx);
                 } else {
@@ -182,26 +197,21 @@ def fetch_article_detail(page, article_url):
                 }
             }
 
-            // 本文からタイトル・日付・カテゴリー・プロフィール部分を除去
-            // タイトル、ユーザー名、日付行、カテゴリー行をスキップ
-            const lines = content.split('\\n').map(l => l.trim()).filter(l => l);
-            const bodyStartMarkers = ['こんにちは', 'どうも', 'ども、', 'はじめまして', 'はじめに'];
+            const bodyStartMarkers = ['こんにちは', 'こんばんは', 'どうも', 'ども、',
+                                       'はじめまして', 'はじめに', 'お疲れ'];
             let bodyStartIdx = -1;
-            for (let i = 0; i < lines.length; i++) {
-                for (const marker of bodyStartMarkers) {
-                    if (lines[i].startsWith(marker)) {
-                        bodyStartIdx = i;
-                        break;
-                    }
+            for (const marker of bodyStartMarkers) {
+                const idx = content.indexOf(marker);
+                if (idx >= 0 && (bodyStartIdx === -1 || idx < bodyStartIdx)) {
+                    bodyStartIdx = idx;
                 }
-                if (bodyStartIdx >= 0) break;
             }
 
             if (bodyStartIdx >= 0) {
-                content = lines.slice(bodyStartIdx).join('\\n\\n');
+                content = content.substring(bodyStartIdx);
             } else {
-                // マーカーが見つからない場合、最初の10行をスキップ（メタ情報のため）
-                content = lines.slice(Math.min(10, Math.floor(lines.length / 3))).join('\\n\\n');
+                const lines = content.split('\\n').map(l => l.trim()).filter(l => l);
+                content = lines.slice(Math.min(8, Math.floor(lines.length / 3))).join('\\n');
             }
 
             return { title, dateStr, area, content };
@@ -212,17 +222,13 @@ def fetch_article_detail(page, article_url):
 
 
 def slugify_from_id(article_id):
-    """記事IDからslugを生成"""
     return f"wakust-{article_id}"
 
 
 def truncate_content(content, max_chars=EXCERPT_MAX_CHARS):
-    """本文を指定文字数で切る。句点で自然に区切る"""
     if len(content) <= max_chars:
         return content
-
     truncated = content[:max_chars]
-    # 最後の句点で切る
     last_period = truncated.rfind("。")
     if last_period > max_chars * 0.5:
         truncated = truncated[:last_period + 1]
@@ -230,20 +236,16 @@ def truncate_content(content, max_chars=EXCERPT_MAX_CHARS):
 
 
 def make_excerpt(content, max_chars=100):
-    """サイトのカード表示用の短い要約を作る"""
-    # 最初の段落を取り出す
     first_para = content.split("\n")[0] if "\n" in content else content[:200]
     return truncate_content(first_para, max_chars)
 
 
 def content_to_html(content):
-    """プレーンテキストをHTMLに変換（段落分け）"""
     paragraphs = [p.strip() for p in content.split("\n") if p.strip()]
     return "\n".join(f"<p>{p}</p>" for p in paragraphs)
 
 
 def build_article_entry(detail, article_url, article_id, thumbnail=""):
-    """articles.json の形式に変換"""
     content_truncated = truncate_content(detail["content"], EXCERPT_MAX_CHARS)
     return {
         "slug": slugify_from_id(article_id),
@@ -267,7 +269,6 @@ def main():
     print(f"最大投稿数: {args.max}")
     print(f"Dry run: {args.dry_run}")
 
-    # 既存記事を読み込み
     existing = load_articles()
     existing_ids = {
         art["slug"].replace("wakust-", "")
@@ -276,20 +277,21 @@ def main():
     }
     print(f"既存の記事数: {len(existing)} (ワクスト由来: {len(existing_ids)})")
 
-    # Playwright起動
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        context = browser.new_context(user_agent=DEFAULT_USER_AGENT, locale="ja-JP")
+        context = browser.new_context(
+            user_agent=DEFAULT_USER_AGENT,
+            locale="ja-JP",
+            viewport={"width": 1280, "height": 800},
+        )
         page = context.new_page()
 
         try:
-            # 記事一覧取得
             articles = fetch_article_list(page)
             if not articles:
                 print("[WARN] 記事が取得できませんでした。終了します。")
                 return
 
-            # 未登録の記事をフィルタリング
             new_articles = [a for a in articles if a["id"] not in existing_ids]
             print(f"[INFO] 未登録の記事: {len(new_articles)}件")
 
@@ -297,11 +299,9 @@ def main():
                 print("[INFO] 新しい記事はありません。終了します。")
                 return
 
-            # 最大N件までに絞る
             to_post = new_articles[: args.max]
             print(f"[INFO] 今回投稿する記事: {len(to_post)}件")
 
-            # 各記事の詳細を取得
             new_entries = []
             for article in to_post:
                 try:
@@ -311,11 +311,13 @@ def main():
                         continue
 
                     entry = build_article_entry(
-                        detail, article["url"], article["id"], article.get("thumbnail", "")
+                        detail, article["url"], article["id"],
+                        article.get("thumbnail", "")
                     )
                     new_entries.append(entry)
-                    print(f"[OK] 記事追加: {entry['title']}")
-                    time.sleep(2)  # サーバー負荷軽減
+                    print(f"[OK] 記事追加: {entry['title'][:40]}... ({entry['date']}, {entry['area']})")
+                    print(f"     サムネイル: {entry['thumbnail'] or '(なし)'}")
+                    time.sleep(2)
                 except Exception as e:
                     print(f"[ERROR] 記事取得失敗: {article['url']} -> {e}")
                     continue
@@ -324,13 +326,14 @@ def main():
                 print("[INFO] 追加する記事がありませんでした。")
                 return
 
-            # articles.json に追加（新しい記事を先頭に）
             updated = new_entries + existing
 
             if args.dry_run:
                 print("=== Dry run 結果 ===")
                 for e in new_entries:
-                    print(f"  - {e['slug']}: {e['title']} ({e['date']}, {e['area']})")
+                    print(f"  - {e['slug']}: {e['title'][:50]}")
+                    print(f"    date: {e['date']}, area: {e['area']}")
+                    print(f"    thumb: {e['thumbnail']}")
                     print(f"    excerpt: {e['excerpt'][:80]}...")
             else:
                 save_articles(updated)
