@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{TITLE}} | メンエス好きのアシタカマガジン</title>
+  <meta name="description" content="{{EXCERPT}}">
+  <link rel="stylesheet" href="/css/style.css">
+  <meta property="og:title" content="{{TITLE}}">
+  <meta property="og:description" content="{{EXCERPT}}">
+  <meta property="og:url" content="https://menesthe-ashitaka.com/articles/{{SLUG}}/">
+  <meta property="og:type" content="article">
+  <meta name="twitter:card" content="summary_large_image">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="/" class="site-logo">
+        メンエス好きのアシタカマガジン
+        <small>by ワクスト</small>
+      </a>
+      <button class="mobile-menu-btn" onclick="toggleMenu()" aria-label="メニュー">☰</button>
+      <nav>
+        <ul class="site-nav" id="siteNav">
+          <li><a href="/">ホーム</a></li>
+          <li><a href="/articles/" class="active">記事一覧</a></li>
+          <li><a href="/shops/">店舗紹介</a></li>
+          <li><a href="/about/">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <article class="article-detail">
+      <div class="article-header">
+        <p class="article-date">{{DATE}} ・ {{AREA}}</p>
+        <h1>{{TITLE}}</h1>
+      </div>
+
+      <div class="article-content">
+        {{CONTENT}}
+      </div>
+
+      <!-- ワクスト誘導CTA -->
+      <div class="wakust-cta">
+        <p>この記事の全文はワクストで公開中！</p>
+        <a href="{{WAKUST_URL}}" class="btn" target="_blank" rel="noopener">
+          ワクストで全文を読む →
+        </a>
+      </div>
+
+      <!-- 関連記事 -->
+      <div style="margin-top: 40px;">
+        <h2 class="section-title" style="font-size: 16px;">関連記事</h2>
+        <div class="articles-grid" style="margin-top: 16px;">
+          {{RELATED_ARTICLES}}
+        </div>
+      </div>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <ul class="footer-links">
+      <li><a href="/">ホーム</a></li>
+      <li><a href="/articles/">記事一覧</a></li>
+      <li><a href="/shops/">店舗紹介</a></li>
+      <li><a href="/about/">About</a></li>
+      <li><a href="https://wakust.com/" target="_blank" rel="noopener">ワクスト</a></li>
+    </ul>
+    <p class="footer-copy">&copy; 2026 メンエス好きのアシタカマガジン ・ Powered by ワクスト</p>
+  </footer>
+
+  <script>
+    function toggleMenu() {
+      document.getElementById('siteNav').classList.toggle('open');
+    }
+  </script>
+
+</body>
+</html>

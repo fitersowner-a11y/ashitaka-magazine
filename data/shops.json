@@ -1,0 +1,46 @@
+[
+  {
+    "slug": "sample-salon-a",
+    "name": "サンプルサロン A",
+    "area": "新宿区",
+    "type": "完全個室",
+    "description": "新宿駅徒歩5分のメンズエステサロン。日本人セラピストによる丁寧な施術が人気。",
+    "tags": [
+      {"label": "日本人", "color": "blue"},
+      {"label": "人気", "color": "amber"}
+    ]
+  },
+  {
+    "slug": "sample-salon-b",
+    "name": "サンプルサロン B",
+    "area": "池袋",
+    "type": "ワンルーム",
+    "description": "池袋エリアの新店。リーズナブルな価格設定が魅力。",
+    "tags": [
+      {"label": "日本人", "color": "blue"},
+      {"label": "新店", "color": "green"}
+    ]
+  },
+  {
+    "slug": "sample-salon-c",
+    "name": "サンプルサロン C",
+    "area": "渋谷区",
+    "type": "完全個室",
+    "description": "渋谷駅近くのコスパ抜群メンズエステ。初心者にもおすすめ。",
+    "tags": [
+      {"label": "日本人", "color": "blue"},
+      {"label": "コスパ◎", "color": "red"}
+    ]
+  },
+  {
+    "slug": "sample-salon-d",
+    "name": "サンプルサロン D",
+    "area": "恵比寿",
+    "type": "完全予約制",
+    "description": "恵比寿の高級メンズエステ。上質な空間と施術で特別なひとときを。",
+    "tags": [
+      {"label": "日本人", "color": "blue"},
+      {"label": "高級", "color": "purple"}
+    ]
+  }
+]

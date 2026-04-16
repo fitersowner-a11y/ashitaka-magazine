@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>店舗紹介 | メンエス好きのアシタカマガジン</title>
+  <meta name="description" content="おすすめのメンズエステ店舗をエリア別に紹介。口コミ・評判・料金情報も。">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="/" class="site-logo">
+        メンエス好きのアシタカマガジン
+        <small>by ワクスト</small>
+      </a>
+      <button class="mobile-menu-btn" onclick="toggleMenu()" aria-label="メニュー">☰</button>
+      <nav>
+        <ul class="site-nav" id="siteNav">
+          <li><a href="/">ホーム</a></li>
+          <li><a href="/articles/">記事一覧</a></li>
+          <li><a href="/shops/" class="active">店舗紹介</a></li>
+          <li><a href="/about/">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="shops-page">
+      <div class="section-header">
+        <h1 class="section-title red">店舗紹介</h1>
+      </div>
+
+      <!-- エリアフィルター -->
+      <div class="shops-filter">
+        <button class="filter-btn active" data-area="all">すべて</button>
+        <button class="filter-btn" data-area="shinjuku">新宿</button>
+        <button class="filter-btn" data-area="ikebukuro">池袋</button>
+        <button class="filter-btn" data-area="shibuya">渋谷</button>
+        <button class="filter-btn" data-area="ebisu">恵比寿</button>
+        <button class="filter-btn" data-area="roppongi">六本木</button>
+        <button class="filter-btn" data-area="yokohama">横浜</button>
+        <button class="filter-btn" data-area="osaka">大阪</button>
+        <button class="filter-btn" data-area="nagoya">名古屋</button>
+      </div>
+
+      <div class="shops-grid" id="shopsList">
+        <!-- 店舗データはJSONから生成 -->
+        <a href="#" class="shop-card">
+          <div class="shop-icon">A</div>
+          <div class="shop-info">
+            <h3>サンプルサロン A</h3>
+            <p class="shop-location">新宿区 ・ 完全個室</p>
+            <div class="shop-tags">
+              <span class="tag blue">日本人</span>
+              <span class="tag amber">人気</span>
+            </div>
+          </div>
+        </a>
+
+        <a href="#" class="shop-card">
+          <div class="shop-icon">B</div>
+          <div class="shop-info">
+            <h3>サンプルサロン B</h3>
+            <p class="shop-location">池袋 ・ ワンルーム</p>
+            <div class="shop-tags">
+              <span class="tag blue">日本人</span>
+              <span class="tag green">新店</span>
+            </div>
+          </div>
+        </a>
+
+        <a href="#" class="shop-card">
+          <div class="shop-icon">C</div>
+          <div class="shop-info">
+            <h3>サンプルサロン C</h3>
+            <p class="shop-location">渋谷区 ・ 完全個室</p>
+            <div class="shop-tags">
+              <span class="tag blue">日本人</span>
+              <span class="tag red">コスパ◎</span>
+            </div>
+          </div>
+        </a>
+
+        <a href="#" class="shop-card">
+          <div class="shop-icon">D</div>
+          <div class="shop-info">
+            <h3>サンプルサロン D</h3>
+            <p class="shop-location">恵比寿 ・ 完全予約制</p>
+            <div class="shop-tags">
+              <span class="tag blue">日本人</span>
+              <span class="tag purple">高級</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <ul class="footer-links">
+      <li><a href="/">ホーム</a></li>
+      <li><a href="/articles/">記事一覧</a></li>
+      <li><a href="/shops/">店舗紹介</a></li>
+      <li><a href="/about/">About</a></li>
+      <li><a href="https://wakust.com/" target="_blank" rel="noopener">ワクスト</a></li>
+    </ul>
+    <p class="footer-copy">&copy; 2026 メンエス好きのアシタカマガジン ・ Powered by ワクスト</p>
+  </footer>
+
+  <script>
+    function toggleMenu() {
+      document.getElementById('siteNav').classList.toggle('open');
+    }
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About | メンエス好きのアシタカマガジン</title>
+  <meta name="description" content="メンエス好きのアシタカマガジンについて。ワクスト公式メディアの紹介。">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="/" class="site-logo">
+        メンエス好きのアシタカマガジン
+        <small>by ワクスト</small>
+      </a>
+      <button class="mobile-menu-btn" onclick="toggleMenu()" aria-label="メニュー">☰</button>
+      <nav>
+        <ul class="site-nav" id="siteNav">
+          <li><a href="/">ホーム</a></li>
+          <li><a href="/articles/">記事一覧</a></li>
+          <li><a href="/shops/">店舗紹介</a></li>
+          <li><a href="/about/" class="active">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <article class="article-detail">
+      <div class="article-header">
+        <h1>About</h1>
+      </div>
+
+      <div class="article-content">
+        <p>
+          「メンエス好きのアシタカマガジン」は、メンズエステの最新情報や体験レビュー、おすすめ店舗情報をお届けする情報メディアです。
+        </p>
+
+        <p>
+          運営者のアシタカが、実際に体験した店舗の情報や、メンズエステ業界の最新トレンドを発信しています。
+          忖度なしの正直なレビューで、皆さんの店舗選びをサポートします。
+        </p>
+
+        <h2 style="font-size: 18px; font-weight: 700; margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--primary);">ワクストについて</h2>
+
+        <p>
+          当サイトの記事の全文は、コンテンツプラットフォーム「ワクスト」にて公開しています。
+          ワクストでは、詳細な体験レビューや店舗情報、ここでは書けないディープな情報をお届けしています。
+        </p>
+
+        <div class="wakust-cta">
+          <p>ワクストで全文記事をチェック！</p>
+          <a href="https://wakust.com/user/ryu-1992/" class="btn" target="_blank" rel="noopener">
+            ワクストでもっと読む →
+          </a>
+        </div>
+
+        <h2 style="font-size: 18px; font-weight: 700; margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--primary);">お問い合わせ</h2>
+
+        <p>
+          記事に関するご質問、店舗掲載のご依頼、その他お問い合わせは、X（旧Twitter）のDMよりお気軽にご連絡ください。
+        </p>
+      </div>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <ul class="footer-links">
+      <li><a href="/">ホーム</a></li>
+      <li><a href="/articles/">記事一覧</a></li>
+      <li><a href="/shops/">店舗紹介</a></li>
+      <li><a href="/about/">About</a></li>
+      <li><a href="https://wakust.com/" target="_blank" rel="noopener">ワクスト</a></li>
+    </ul>
+    <p class="footer-copy">&copy; 2026 メンエス好きのアシタカマガジン ・ Powered by ワクスト</p>
+  </footer>
+
+  <script>
+    function toggleMenu() {
+      document.getElementById('siteNav').classList.toggle('open');
+    }
+  </script>
+
+</body>
+</html>

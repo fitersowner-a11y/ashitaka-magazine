@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>記事一覧 | メンエス好きのアシタカマガジン</title>
+  <meta name="description" content="メンズエステに関する最新記事一覧。体験レビュー、店舗紹介、お得な情報をお届け。">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="/" class="site-logo">
+        メンエス好きのアシタカマガジン
+        <small>by ワクスト</small>
+      </a>
+      <button class="mobile-menu-btn" onclick="toggleMenu()" aria-label="メニュー">☰</button>
+      <nav>
+        <ul class="site-nav" id="siteNav">
+          <li><a href="/">ホーム</a></li>
+          <li><a href="/articles/" class="active">記事一覧</a></li>
+          <li><a href="/shops/">店舗紹介</a></li>
+          <li><a href="/about/">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="section">
+      <div class="section-header">
+        <h1 class="section-title">記事一覧</h1>
+      </div>
+
+      <!-- フィルター -->
+      <div class="shops-filter" style="margin-bottom: 24px;">
+        <button class="filter-btn active" data-filter="all">すべて</button>
+        <button class="filter-btn" data-filter="tokyo">東京都</button>
+        <button class="filter-btn" data-filter="kanagawa">神奈川県</button>
+        <button class="filter-btn" data-filter="osaka">大阪府</button>
+        <button class="filter-btn" data-filter="aichi">愛知県</button>
+      </div>
+
+      <div class="articles-grid" id="articlesList">
+        <!-- 記事はビルドスクリプトで自動生成 -->
+        <div class="article-card">
+          <div class="article-thumb"><span class="placeholder">📝</span></div>
+          <div class="article-body">
+            <div class="article-meta">東京都 ・ 2026.04.15</div>
+            <h3 class="article-title">サンプル記事タイトル</h3>
+            <p class="article-excerpt">ここに記事の冒頭テキストが入ります。</p>
+            <a href="#" class="article-read-more">続きを読む →</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <ul class="footer-links">
+      <li><a href="/">ホーム</a></li>
+      <li><a href="/articles/">記事一覧</a></li>
+      <li><a href="/shops/">店舗紹介</a></li>
+      <li><a href="/about/">About</a></li>
+      <li><a href="https://wakust.com/" target="_blank" rel="noopener">ワクスト</a></li>
+    </ul>
+    <p class="footer-copy">&copy; 2026 メンエス好きのアシタカマガジン ・ Powered by ワクスト</p>
+  </footer>
+
+  <script>
+    function toggleMenu() {
+      document.getElementById('siteNav').classList.toggle('open');
+    }
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>メンエス好きのアシタカマガジン | メンズエステ情報メディア</title>
+  <meta name="description" content="メンズエステの最新情報、厳選レビュー、おすすめ店舗ガイドをお届け。ワクスト公式メディア。">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="canonical" href="https://menesthe-ashitaka.com/">
+  <!-- OGP -->
+  <meta property="og:title" content="メンエス好きのアシタカマガジン">
+  <meta property="og:description" content="メンズエステの最新情報、厳選レビュー、おすすめ店舗ガイドをお届け。">
+  <meta property="og:url" content="https://menesthe-ashitaka.com/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="メンエス好きのアシタカマガジン">
+  <meta name="twitter:card" content="summary_large_image">
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="/" class="site-logo">
+        メンエス好きのアシタカマガジン
+        <small>by ワクスト</small>
+      </a>
+      <button class="mobile-menu-btn" onclick="toggleMenu()" aria-label="メニュー">☰</button>
+      <nav>
+        <ul class="site-nav" id="siteNav">
+          <li><a href="/" class="active">ホーム</a></li>
+          <li><a href="/articles/">記事一覧</a></li>
+          <li><a href="/shops/">店舗紹介</a></li>
+          <li><a href="/about/">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <p class="hero-subtitle">メンズエステの最新情報をお届け</p>
+    <h1 class="hero-title">厳選レビュー &amp; おすすめ店舗ガイド</h1>
+    <a href="https://wakust.com/user/ryu-1992/" class="hero-cta" target="_blank" rel="noopener">
+      ワクストで記事をもっと読む →
+    </a>
+  </section>
+
+  <!-- LATEST ARTICLES -->
+  <main class="container">
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">最新記事</h2>
+        <a href="/articles/" class="section-more">一覧を見る →</a>
+      </div>
+      <div class="articles-grid" id="latestArticles">
+        <!-- 記事カードはJSで動的生成 or 静的ビルド時に挿入 -->
+        <div class="article-card">
+          <div class="article-thumb">
+            <span class="placeholder">📝</span>
+          </div>
+          <div class="article-body">
+            <div class="article-meta">東京都 ・ 2026.04.15</div>
+            <h3 class="article-title">新宿エリアの注目店舗を徹底レビュー！コスパ最強のおすすめサロン</h3>
+            <p class="article-excerpt">新宿エリアで人気のメンズエステ店を実際に体験。施術の質、セラピストの対応、コスパなど多角的に評価しました。</p>
+            <a href="#" class="article-read-more">続きを読む →</a>
+          </div>
+        </div>
+
+        <div class="article-card">
+          <div class="article-thumb">
+            <span class="placeholder">📝</span>
+          </div>
+          <div class="article-body">
+            <div class="article-meta">神奈川県 ・ 2026.04.13</div>
+            <h3 class="article-title">横浜エリアの隠れ家サロン3選！癒し度MAXのプライベート空間</h3>
+            <p class="article-excerpt">横浜で見つけた隠れ家的メンズエステサロンを紹介。完全個室で極上のリラクゼーション体験を。</p>
+            <a href="#" class="article-read-more">続きを読む →</a>
+          </div>
+        </div>
+
+        <div class="article-card">
+          <div class="article-thumb">
+            <span class="placeholder">📝</span>
+          </div>
+          <div class="article-body">
+            <div class="article-meta">大阪府 ・ 2026.04.11</div>
+            <h3 class="article-title">大阪で話題の新店オープン！初回限定キャンペーン情報まとめ</h3>
+            <p class="article-excerpt">大阪エリアに新しくオープンしたメンズエステ店の情報をまとめ。お得なキャンペーン情報も。</p>
+            <a href="#" class="article-read-more">続きを読む →</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RECOMMENDED SHOPS -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title red">おすすめ店舗</h2>
+        <a href="/shops/" class="section-more">一覧を見る →</a>
+      </div>
+      <div class="shops-grid" id="recommendedShops">
+        <a href="#" class="shop-card">
+          <div class="shop-icon">A</div>
+          <div class="shop-info">
+            <h3>サンプルサロン A</h3>
+            <p class="shop-location">新宿区 ・ 完全個室</p>
+            <div class="shop-tags">
+              <span class="tag blue">日本人</span>
+              <span class="tag amber">人気</span>
+            </div>
+          </div>
+        </a>
+
+        <a href="#" class="shop-card">
+          <div class="shop-icon">B</div>
+          <div class="shop-info">
+            <h3>サンプルサロン B</h3>
+            <p class="shop-location">池袋 ・ ワンルーム</p>
+            <div class="shop-tags">
+              <span class="tag blue">日本人</span>
+              <span class="tag green">新店</span>
+            </div>
+          </div>
+        </a>
+
+        <a href="#" class="shop-card">
+          <div class="shop-icon">C</div>
+          <div class="shop-info">
+            <h3>サンプルサロン C</h3>
+            <p class="shop-location">渋谷区 ・ 完全個室</p>
+            <div class="shop-tags">
+              <span class="tag blue">日本人</span>
+              <span class="tag red">コスパ◎</span>
+            </div>
+          </div>
+        </a>
+
+        <a href="#" class="shop-card">
+          <div class="shop-icon">D</div>
+          <div class="shop-info">
+            <h3>サンプルサロン D</h3>
+            <p class="shop-location">恵比寿 ・ 完全予約制</p>
+            <div class="shop-tags">
+              <span class="tag blue">日本人</span>
+              <span class="tag purple">高級</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <ul class="footer-links">
+      <li><a href="/">ホーム</a></li>
+      <li><a href="/articles/">記事一覧</a></li>
+      <li><a href="/shops/">店舗紹介</a></li>
+      <li><a href="/about/">About</a></li>
+      <li><a href="https://wakust.com/" target="_blank" rel="noopener">ワクスト</a></li>
+    </ul>
+    <p class="footer-copy">&copy; 2026 メンエス好きのアシタカマガジン ・ Powered by ワクスト</p>
+  </footer>
+
+  <script>
+    function toggleMenu() {
+      document.getElementById('siteNav').classList.toggle('open');
+    }
+  </script>
+
+</body>
+</html>
