@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-ワクスト全記事データ取得スクリプト (fetch_all_data.py) v3
+ワクスト全記事データ取得スクリプト (fetch_all_data.py) v4
 
-ログインして管理画面から全記事の詳細データを取得し、
-data/all_articles_data.json に保存する。
+v3からの修正:
+- 年齢確認ボタン: id="age-verify-yes" を使用
+- モーダル閉じ待ちを十分に取る
 """
 
 import json
@@ -46,20 +47,35 @@ def save_data(articles_dict):
 
 
 def accept_age_modal(page):
-    time.sleep(1)
-    try:
-        page.evaluate("""
-            () => {
-                const els = document.querySelectorAll('a, button, span, div');
-                for (const el of els) {
-                    if ((el.textContent || '').trim() === 'はい') {
-                        try { el.click(); break; } catch (e) {}
+    """年齢確認モーダルを閉じる"""
+    for attempt in range(3):
+        try:
+            clicked = page.evaluate("""
+                () => {
+                    // id="age-verify-yes" のボタンを探す
+                    const btn = document.querySelector('#age-verify-yes');
+                    if (btn) {
+                        btn.click();
+                        return 'age-verify-yes';
                     }
+                    // フォールバック: テキストで探す
+                    const els = document.querySelectorAll('a, button, span, div');
+                    for (const el of els) {
+                        if ((el.textContent || '').trim() === 'はい') {
+                            try { el.click(); return 'text-match'; } catch (e) {}
+                        }
+                    }
+                    return null;
                 }
-            }
-        """)
-    except Exception:
-        pass
+            """)
+            if clicked:
+                print(f"[DEBUG] 年齢確認クリック: {clicked}")
+                time.sleep(2)
+                return True
+        except Exception:
+            pass
+        time.sleep(1)
+    return False
 
 
 def login(page):
@@ -67,8 +83,32 @@ def login(page):
     print("[INFO] ログイン中...")
     page.goto(LOGIN_URL, wait_until="networkidle", timeout=60000)
     time.sleep(3)
+
+    # 年齢確認を先に処理（十分待つ）
+    print("[INFO] 年齢確認処理中...")
     accept_age_modal(page)
-    time.sleep(2)
+    time.sleep(3)
+
+    # フォームが操作可能か確認
+    form_check = page.evaluate("""
+        () => {
+            const emailInput = document.querySelector('input[name="login_email"]');
+            const pwInput = document.querySelector('input[name="login_password"]');
+            return {
+                emailFound: !!emailInput,
+                pwFound: !!pwInput,
+                emailVisible: emailInput ? emailInput.offsetParent !== null : false,
+                pwVisible: pwInput ? pwInput.offsetParent !== null : false
+            };
+        }
+    """)
+    print(f"[DEBUG] フォーム状態: {json.dumps(form_check)}")
+
+    # モーダルがまだ残っている場合、もう一度試す
+    if not form_check.get("emailVisible"):
+        print("[INFO] フォームがまだ非表示。年齢確認を再試行...")
+        accept_age_modal(page)
+        time.sleep(3)
 
     # メールアドレス入力
     email_filled = page.evaluate(f"""
@@ -76,6 +116,7 @@ def login(page):
             const email = {json.dumps(WAKUST_EMAIL)};
             const el = document.querySelector('input[name="login_email"]');
             if (el) {{
+                el.focus();
                 el.value = email;
                 el.dispatchEvent(new Event('input', {{ bubbles: true }}));
                 el.dispatchEvent(new Event('change', {{ bubbles: true }}));
@@ -92,6 +133,7 @@ def login(page):
             const pw = {json.dumps(WAKUST_PASSWORD)};
             const el = document.querySelector('input[name="login_password"]');
             if (el) {{
+                el.focus();
                 el.value = pw;
                 el.dispatchEvent(new Event('input', {{ bubbles: true }}));
                 el.dispatchEvent(new Event('change', {{ bubbles: true }}));
@@ -109,11 +151,8 @@ def login(page):
     # ログインボタンをクリック
     page.evaluate("""
         () => {
-            // login_submit クラスのボタンを探す
             const submitBtn = document.querySelector('.login_submit');
             if (submitBtn) { submitBtn.click(); return true; }
-
-            // フォールバック
             const candidates = document.querySelectorAll('input[type="submit"], button[type="submit"], button');
             for (const btn of candidates) {
                 const txt = (btn.value || btn.textContent || '').trim();
