@@ -45,13 +45,10 @@
     </a>
   </section>
 
-  <!-- SALE ARTICLES -->
+  <!-- FREE ARTICLE + SALE ARTICLE (2 columns) -->
   <main class="container">
-    <section class="section" id="saleSection" style="display:none;">
-      <div class="section-header">
-        <h2 class="section-title sale">🔥 今週のセール記事</h2>
-      </div>
-      <div class="articles-grid" id="saleArticles">
+    <section class="section" id="featuredSection" style="display:none;">
+      <div class="featured-row" id="featuredRow">
       </div>
     </section>
 
@@ -62,51 +59,21 @@
         <a href="/articles/" class="section-more">一覧を見る →</a>
       </div>
       <div class="articles-grid" id="latestArticles">
-        <!-- 記事カードはJSで動的生成 or 静的ビルド時に挿入 -->
-        <div class="article-card">
-          <div class="article-thumb">
-            <span class="placeholder">📝</span>
-          </div>
-          <div class="article-body">
-            <div class="article-meta">東京都 ・ 2026.04.15</div>
-            <h3 class="article-title">新宿エリアの注目店舗を徹底レビュー！コスパ最強のおすすめサロン</h3>
-            <p class="article-excerpt">新宿エリアで人気のメンズエステ店を実際に体験。施術の質、セラピストの対応、コスパなど多角的に評価しました。</p>
-            <a href="#" class="article-read-more">続きを読む →</a>
-          </div>
-        </div>
-
-        <div class="article-card">
-          <div class="article-thumb">
-            <span class="placeholder">📝</span>
-          </div>
-          <div class="article-body">
-            <div class="article-meta">神奈川県 ・ 2026.04.13</div>
-            <h3 class="article-title">横浜エリアの隠れ家サロン3選！癒し度MAXのプライベート空間</h3>
-            <p class="article-excerpt">横浜で見つけた隠れ家的メンズエステサロンを紹介。完全個室で極上のリラクゼーション体験を。</p>
-            <a href="#" class="article-read-more">続きを読む →</a>
-          </div>
-        </div>
-
-        <div class="article-card">
-          <div class="article-thumb">
-            <span class="placeholder">📝</span>
-          </div>
-          <div class="article-body">
-            <div class="article-meta">大阪府 ・ 2026.04.11</div>
-            <h3 class="article-title">大阪で話題の新店オープン！初回限定キャンペーン情報まとめ</h3>
-            <p class="article-excerpt">大阪エリアに新しくオープンしたメンズエステ店の情報をまとめ。お得なキャンペーン情報も。</p>
-            <a href="#" class="article-read-more">続きを読む →</a>
-          </div>
-        </div>
       </div>
     </section>
 
-    <!-- BESTSELLER ARTICLES -->
+    <!-- RANKING -->
     <section class="section">
       <div class="section-header">
-        <h2 class="section-title amber">売れ筋記事</h2>
+        <h2 class="section-title amber">売れ筋ランキング</h2>
       </div>
-      <div class="articles-grid articles-grid-3x3" id="bestsellerArticles">
+      <div class="ranking-tabs">
+        <button class="ranking-tab active" data-target="rankWeekly">今週（72h）</button>
+        <button class="ranking-tab" data-target="rankTotal">総計</button>
+      </div>
+      <div class="ranking-list" id="rankWeekly">
+      </div>
+      <div class="ranking-list" id="rankTotal" style="display:none;">
       </div>
     </section>
   </main>
@@ -127,6 +94,40 @@
     function toggleMenu() {
       document.getElementById('siteNav').classList.toggle('open');
     }
+
+    // カウントダウンタイマー（次の月曜0時 JST まで）
+    function updateCountdown() {
+      var now = new Date();
+      var jst = new Date(now.getTime() + (9 * 60 * 60 * 1000));
+      var day = jst.getUTCDay();
+      var daysUntil = day === 0 ? 1 : (8 - day);
+      if (day === 1 && jst.getUTCHours() === 0 && jst.getUTCMinutes() === 0) daysUntil = 7;
+      var next = new Date(jst);
+      next.setUTCDate(jst.getUTCDate() + daysUntil);
+      next.setUTCHours(0, 0, 0, 0);
+      var diff = next - jst;
+      if (diff <= 0) return;
+      var d = Math.floor(diff / 86400000);
+      var h = Math.floor((diff % 86400000) / 3600000);
+      var m = Math.floor((diff % 3600000) / 60000);
+      var txt = d + '日 ' + h + '時間 ' + m + '分';
+      document.querySelectorAll('.countdown-timer').forEach(function(el) {
+        el.textContent = txt;
+      });
+    }
+    updateCountdown();
+    setInterval(updateCountdown, 60000);
+
+    // ランキングタブ切替
+    document.querySelectorAll('.ranking-tab').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        document.querySelectorAll('.ranking-tab').forEach(function(t) { t.classList.remove('active'); });
+        tab.classList.add('active');
+        document.querySelectorAll('.ranking-list').forEach(function(l) { l.style.display = 'none'; });
+        var target = document.getElementById(tab.getAttribute('data-target'));
+        if (target) target.style.display = 'block';
+      });
+    });
   </script>
 
 </body>

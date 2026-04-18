@@ -184,8 +184,212 @@ a:hover {
   border-bottom-color: var(--accent-amber);
 }
 
-.articles-grid-3x3 {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+.section-title.free {
+  border-bottom-color: var(--accent-green);
+  color: var(--accent-green);
+}
+
+/* ===== FEATURED ROW (Free + Sale 2-column) ===== */
+.featured-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.featured-card {
+  background: var(--bg-primary);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.featured-card.green { border: 2px solid var(--accent-green); }
+.featured-card.orange { border: 2px solid #ff6b35; }
+
+.featured-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+}
+
+.featured-badge {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 12px;
+  border-radius: 12px;
+}
+
+.featured-badge.green { background: var(--accent-green-light); color: #3b6d11; }
+.featured-badge.orange { background: #fff0e6; color: #993c1d; }
+
+.featured-timer {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.featured-timer-icon {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid var(--text-tertiary);
+  border-radius: 50%;
+  position: relative;
+}
+
+.featured-timer-icon::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 5px;
+  width: 1.5px;
+  height: 5px;
+  background: var(--text-tertiary);
+}
+
+.featured-thumb {
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: var(--bg-tertiary);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.featured-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.featured-body {
+  padding: 14px 16px;
+}
+
+.featured-title {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.6;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.featured-meta {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.featured-btn {
+  display: block;
+  text-align: center;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  transition: opacity 0.2s;
+}
+
+.featured-btn:hover { opacity: 0.85; color: #fff; }
+.featured-btn.green { background: var(--accent-green); }
+.featured-btn.orange { background: #ff6b35; }
+
+/* ===== RANKING ===== */
+.ranking-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 16px;
+}
+
+.ranking-tab {
+  flex: 1;
+  text-align: center;
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.ranking-tab:first-child { border-radius: 8px 0 0 8px; }
+.ranking-tab:last-child { border-radius: 0 8px 8px 0; }
+
+.ranking-tab.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.ranking-list {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.ranking-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-light);
+  transition: background 0.15s;
+}
+
+.ranking-item:last-child { border-bottom: none; }
+.ranking-item:hover { background: var(--bg-secondary); }
+.ranking-item.top3 { background: var(--bg-secondary); }
+
+.ranking-num {
+  min-width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.ranking-num.r1 { background: #faeeda; color: #854f0b; }
+.ranking-num.r2 { background: var(--bg-tertiary); color: var(--text-secondary); }
+.ranking-num.r3 { background: #faece7; color: #993c1d; }
+.ranking-num.r-other { background: transparent; color: var(--text-tertiary); font-weight: 500; }
+
+.ranking-thumb {
+  width: 52px;
+  height: 38px;
+  border-radius: 4px;
+  background: var(--bg-tertiary);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.ranking-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ranking-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .section-more {
@@ -483,6 +687,10 @@ a:hover {
   }
 
   .shops-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .featured-row {
     grid-template-columns: 1fr;
   }
 

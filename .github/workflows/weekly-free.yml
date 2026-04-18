@@ -1,0 +1,39 @@
+name: Weekly free article
+
+on:
+  schedule:
+    # 毎週月曜 日本時間 朝6:00 (UTC 日曜 21:00)
+    - cron: '0 21 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  select-free:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Select free article
+        run: python3 select_free_article.py
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/free_article.json data/free_history.json
+          if git diff --staged --quiet; then
+            echo "変更なし"
+          else
+            git commit -m "free: $(date +'%Y-%m-%d') の無料記事を選定"
+            git push
+          fi

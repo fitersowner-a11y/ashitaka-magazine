@@ -145,23 +145,87 @@ def build_article_pages(articles, template):
     print(f"  記事ページ: {len(articles)}件 生成完了")
 
 
-def build_index(articles, shops, sale_articles, bestseller_articles):
+def generate_featured_card(article, card_type="green"):
+    """無料記事またはセール記事の大きめカードHTMLを生成"""
+    thumb = article.get("thumbnail", "")
+    title_escaped = escape_html(article.get("title", ""))
+    thumb_html = f'<img src="{thumb}" alt="{title_escaped}" loading="lazy">' if thumb else ''
+
+    if card_type == "green":
+        badge_text = "全文無料公開中"
+        badge_class = "green"
+        btn_text = "この記事を無料で読む →"
+        btn_class = "green"
+        link = f'/articles/{article.get("slug", "")}/'
+        target = ""
+    else:
+        badge_text = "セール中"
+        badge_class = "orange"
+        btn_text = "ワクストでセール記事を見る →"
+        btn_class = "orange"
+        link = article.get("wakust_url", "https://wakust.com/user/ryu-1992/")
+        target = ' target="_blank" rel="noopener"'
+
+    area = escape_html(article.get("area", article.get("category", "")))
+    date = article.get("date", article.get("post_date", ""))
+
+    return f'''
+      <div class="featured-card {card_type}">
+        <div class="featured-card-top">
+          <span class="featured-badge {badge_class}">{badge_text}</span>
+          <span class="featured-timer"><span class="featured-timer-icon"></span><span class="countdown-timer"></span></span>
+        </div>
+        <div class="featured-thumb">{thumb_html}</div>
+        <div class="featured-body">
+          <div class="featured-title">{title_escaped}</div>
+          <div class="featured-meta">{area} ・ {date}</div>
+        </div>
+        <a href="{link}" class="featured-btn {btn_class}"{target}>{btn_text}</a>
+      </div>'''
+
+
+def generate_ranking_item(article, rank):
+    """ランキングアイテムHTMLを生成"""
+    thumb = article.get("thumbnail", "")
+    title_escaped = escape_html(article.get("title", ""))
+    thumb_html = f'<img src="{thumb}" alt="{title_escaped}" loading="lazy">' if thumb else ''
+    top3_class = " top3" if rank <= 3 else ""
+    num_class = f"r{rank}" if rank <= 3 else "r-other"
+    link = article.get("wakust_url", f'/articles/wakust-{article.get("id", "")}/')
+
+    return f'''
+      <a href="{link}" class="ranking-item{top3_class}" target="_blank" rel="noopener">
+        <div class="ranking-num {num_class}">{rank}</div>
+        <div class="ranking-thumb">{thumb_html}</div>
+        <div class="ranking-title">{title_escaped}</div>
+      </a>'''
+
+
+def build_index(articles, shops, sale_articles, bestseller_articles, free_article):
     index_path = os.path.join(PUBLIC_DIR, "index.html")
     with open(index_path, "r", encoding="utf-8") as f:
         html = f.read()
 
-    # セール記事セクション
-    if sale_articles:
-        sale_cards = "".join(generate_article_card(a) for a in sale_articles)
+    # === Featured Row (無料記事 + セール記事) ===
+    has_free = free_article and free_article.get("title")
+    has_sale = sale_articles and len(sale_articles) > 0
+
+    if has_free or has_sale:
+        featured_html = ""
+        if has_free:
+            featured_html += generate_featured_card(free_article, "green")
+        if has_sale:
+            featured_html += generate_featured_card(sale_articles[0], "orange")
+
         html = re.sub(
-            r'(<div class="articles-grid" id="saleArticles">)\s*(</div>)',
-            rf'\1{sale_cards}\2',
+            r'(<div class="featured-row" id="featuredRow">)\s*(</div>)',
+            rf'\1{featured_html}\2',
             html,
             flags=re.DOTALL,
         )
-        html = html.replace('id="saleSection" style="display:none;"', 'id="saleSection"')
+        html = html.replace('id="featuredSection" style="display:none;"', 'id="featuredSection"')
 
-    # 最新記事
+    # === 最新記事 ===
     if articles:
         latest = sorted(articles, key=lambda a: a["date"], reverse=True)[:3]
         cards_html = "".join(generate_article_card(a) for a in latest)
@@ -175,15 +239,35 @@ def build_index(articles, shops, sale_articles, bestseller_articles):
         flags=re.DOTALL,
     )
 
-    # 売れ筋記事（3x3=9件）
+    # === 売れ筋ランキング ===
+    # 今週（bestseller_articles = 72h売上ランキング）
     if bestseller_articles:
-        bs_cards = "".join(generate_article_card(a) for a in bestseller_articles[:9])
+        weekly_html = ""
+        for i, a in enumerate(bestseller_articles[:10]):
+            weekly_html += generate_ranking_item(a, i + 1)
     else:
-        bs_cards = '<div style="text-align:center;padding:40px;color:#888;">売れ筋データを取得中です。</div>'
+        weekly_html = '<div style="text-align:center;padding:30px;color:#888;">データ取得中です</div>'
 
     html = re.sub(
-        r'(<div class="articles-grid articles-grid-3x3" id="bestsellerArticles">)\s*(</div>)',
-        rf'\1{bs_cards}\2',
+        r'(<div class="ranking-list" id="rankWeekly">)\s*(</div>)',
+        rf'\1{weekly_html}\2',
+        html,
+        flags=re.DOTALL,
+    )
+
+    # 総計（all_articles_data.json から売上順で取得）
+    all_data = load_json("all_articles_data.json")
+    if all_data:
+        sorted_all = sorted(all_data, key=lambda a: a.get("sales_amount", 0), reverse=True)[:10]
+        total_html = ""
+        for i, a in enumerate(sorted_all):
+            total_html += generate_ranking_item(a, i + 1)
+    else:
+        total_html = '<div style="text-align:center;padding:30px;color:#888;">データ取得中です</div>'
+
+    html = re.sub(
+        r'(<div class="ranking-list" id="rankTotal" style="display:none;">)\s*(</div>)',
+        rf'\1{total_html}\2',
         html,
         flags=re.DOTALL,
     )
@@ -306,6 +390,72 @@ def build_robots_txt():
     print("  robots.txt: 生成完了")
 
 
+def build_free_article_page(free_article, template):
+    """無料公開記事の全文ページを生成"""
+    if not free_article or not free_article.get("title"):
+        return
+
+    slug = free_article["slug"]
+    output_dir = os.path.join(PUBLIC_DIR, "articles", slug)
+    os.makedirs(output_dir, exist_ok=True)
+
+    # 無料本文 + 有料本文を結合
+    free_text = free_article.get("free_content", "")
+    paid_text = free_article.get("paid_content", "")
+
+    # 無料本文をHTML化（プレーンテキストの場合）
+    if free_text and not free_text.strip().startswith("<"):
+        free_html = "\n".join(f"<p>{p.strip()}</p>" for p in free_text.split("\n") if p.strip())
+    else:
+        free_html = free_text
+
+    # 全文を結合
+    full_content = free_html
+    if paid_text:
+        full_content += '\n<hr style="margin: 2em 0; border: none; border-top: 2px dashed var(--primary);">\n'
+        full_content += '<p style="text-align:center; color: var(--primary); font-weight: 500; margin-bottom: 1.5em;">▼ ここから有料部分（今週限定で無料公開中！） ▼</p>\n'
+        full_content += paid_text
+
+    html = template
+    html = html.replace("{{TITLE}}", escape_html(free_article["title"]))
+    html = html.replace("{{DATE}}", free_article.get("date", ""))
+    html = html.replace("{{AREA}}", escape_html(free_article.get("area", "")))
+    html = html.replace("{{EXCERPT}}", escape_html(free_article.get("excerpt", "")))
+    html = html.replace("{{SLUG}}", slug)
+    html = html.replace("{{CONTENT}}", full_content)
+    html = html.replace("{{WAKUST_URL}}", free_article.get("wakust_url", "https://wakust.com/"))
+    html = html.replace("{{RELATED_ARTICLES}}", "")
+
+    # CTAを変更（全文公開中なので「他の記事も読む」に）
+    html = html.replace(
+        "この記事の全文はワクストで公開中！",
+        "この記事を気に入っていただけたら、他の記事もチェック！"
+    )
+    html = html.replace(
+        "ワクストで全文を読む →",
+        "ワクストで他の記事も読む →"
+    )
+
+    # 構造化データ
+    structured = generate_structured_data({
+        "title": free_article["title"],
+        "excerpt": free_article.get("excerpt", ""),
+        "date": free_article.get("date", ""),
+        "slug": slug,
+        "thumbnail": free_article.get("thumbnail", ""),
+    })
+    html = html.replace("</head>", f"{structured}\n</head>")
+
+    if free_article.get("thumbnail"):
+        if 'property="og:image"' not in html:
+            html = html.replace("</head>", f'<meta property="og:image" content="{free_article["thumbnail"]}">\n</head>')
+
+    with open(os.path.join(output_dir, "index.html"), "w", encoding="utf-8") as f:
+        f.write(html)
+
+    print(f"  無料記事ページ: {free_article['title'][:40]}... 生成完了")
+
+
 def main():
     print("=== ビルド開始 ===")
     print(f"時刻: {datetime.now().isoformat()}")
@@ -332,15 +482,23 @@ def main():
     shops = load_json("shops.json")
     sale_articles = load_json("sale_articles.json")
     bestseller_articles = load_json("bestseller_articles.json")
+    free_article = load_json("free_article.json")
+    if isinstance(free_article, list):
+        free_article = free_article[0] if free_article else {}
 
     print(f"データ: 記事 {len(articles)}件, 店舗 {len(shops)}件, セール {len(sale_articles)}件, 売れ筋 {len(bestseller_articles)}件")
+    if free_article and free_article.get("title"):
+        print(f"  無料記事: {free_article['title'][:40]}...")
 
     article_template = load_template("article.html")
 
     if articles:
         build_article_pages(articles, article_template)
-    build_index(articles, shops, sale_articles, bestseller_articles)
+    build_index(articles, shops, sale_articles, bestseller_articles, free_article)
     build_articles_list(articles)
+
+    if free_article and free_article.get("title"):
+        build_free_article_page(free_article, article_template)
 
     if shops:
         build_shops_list(shops)
