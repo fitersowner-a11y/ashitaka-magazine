@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ワクスト全記事データ取得スクリプト (fetch_all_data.py) v2
+ワクスト全記事データ取得スクリプト (fetch_all_data.py) v3
 
 ログインして管理画面から全記事の詳細データを取得し、
 data/all_articles_data.json に保存する。
@@ -70,41 +70,18 @@ def login(page):
     accept_age_modal(page)
     time.sleep(2)
 
-    # デバッグ: ページのinput要素を確認
-    inputs_info = page.evaluate("""
-        () => {
-            const inputs = document.querySelectorAll('input');
-            return Array.from(inputs).map(i => ({
-                name: i.name,
-                type: i.type,
-                id: i.id,
-                placeholder: i.placeholder
-            }));
-        }
-    """)
-    print(f"[DEBUG] ページ内のinput要素: {json.dumps(inputs_info, ensure_ascii=False)}")
-
-    # メールアドレス入力 — 複数のセレクタを試す
+    # メールアドレス入力
     email_filled = page.evaluate(f"""
         () => {{
             const email = {json.dumps(WAKUST_EMAIL)};
-            const selectors = [
-                'input[name="user_login"]',
-                'input[name="log"]',
-                'input[name="email"]',
-                'input[type="email"]',
-                'input[type="text"]'
-            ];
-            for (const sel of selectors) {{
-                const el = document.querySelector(sel);
-                if (el && !el.value) {{
-                    el.value = email;
-                    el.dispatchEvent(new Event('input', {{ bubbles: true }}));
-                    el.dispatchEvent(new Event('change', {{ bubbles: true }}));
-                    return sel;
-                }}
+            const el = document.querySelector('input[name="login_email"]');
+            if (el) {{
+                el.value = email;
+                el.dispatchEvent(new Event('input', {{ bubbles: true }}));
+                el.dispatchEvent(new Event('change', {{ bubbles: true }}));
+                return true;
             }}
-            return null;
+            return false;
         }}
     """)
     print(f"[DEBUG] メールアドレス入力: {email_filled}")
@@ -113,22 +90,14 @@ def login(page):
     pw_filled = page.evaluate(f"""
         () => {{
             const pw = {json.dumps(WAKUST_PASSWORD)};
-            const selectors = [
-                'input[name="user_pass"]',
-                'input[name="pwd"]',
-                'input[name="password"]',
-                'input[type="password"]'
-            ];
-            for (const sel of selectors) {{
-                const el = document.querySelector(sel);
-                if (el) {{
-                    el.value = pw;
-                    el.dispatchEvent(new Event('input', {{ bubbles: true }}));
-                    el.dispatchEvent(new Event('change', {{ bubbles: true }}));
-                    return sel;
-                }}
+            const el = document.querySelector('input[name="login_password"]');
+            if (el) {{
+                el.value = pw;
+                el.dispatchEvent(new Event('input', {{ bubbles: true }}));
+                el.dispatchEvent(new Event('change', {{ bubbles: true }}));
+                return true;
             }}
-            return null;
+            return false;
         }}
     """)
     print(f"[DEBUG] パスワード入力: {pw_filled}")
@@ -140,19 +109,16 @@ def login(page):
     # ログインボタンをクリック
     page.evaluate("""
         () => {
-            const candidates = document.querySelectorAll('input[type="submit"], button[type="submit"], button, input[type="button"]');
+            // login_submit クラスのボタンを探す
+            const submitBtn = document.querySelector('.login_submit');
+            if (submitBtn) { submitBtn.click(); return true; }
+
+            // フォールバック
+            const candidates = document.querySelectorAll('input[type="submit"], button[type="submit"], button');
             for (const btn of candidates) {
                 const txt = (btn.value || btn.textContent || '').trim();
-                if (txt === 'ログイン' || txt === 'Login' || txt === 'ログインする') {
+                if (txt === 'ログイン' || txt === 'Login') {
                     btn.click();
-                    return true;
-                }
-            }
-            const forms = document.querySelectorAll('form');
-            for (const form of forms) {
-                const action = form.getAttribute('action') || '';
-                if (action.includes('login') || form.querySelector('input[type="password"]')) {
-                    form.submit();
                     return true;
                 }
             }
@@ -167,11 +133,11 @@ def login(page):
 
     # ログイン確認
     current_url = page.url
-    page_text = page.evaluate("() => document.body.innerText.substring(0, 500)")
     print(f"[DEBUG] ログイン後URL: {current_url}")
-    print(f"[DEBUG] ページ冒頭: {page_text[:200]}")
 
     if "login" in current_url.lower() and "mypage" not in current_url.lower():
+        page_text = page.evaluate("() => document.body.innerText.substring(0, 300)")
+        print(f"[DEBUG] ページ冒頭: {page_text[:150]}")
         print("[ERROR] ログインに失敗した可能性があります")
         return False
 
@@ -192,7 +158,6 @@ def fetch_list_page(page, page_num):
     accept_age_modal(page)
     time.sleep(1)
 
-    # デバッグ: テーブル構造を確認
     if page_num == 1:
         debug_info = page.evaluate("""
             () => {
@@ -223,10 +188,6 @@ def fetch_list_page(page, page_num):
                 const cells = row.querySelectorAll('td');
                 if (cells.length < 5) continue;
 
-                // 全セルのテキストを取得
-                const cellTexts = Array.from(cells).map(c => c.textContent.trim());
-
-                // タイトルリンクを探す（記事URLを含むリンク）
                 let articleId = '';
                 let title = '';
                 let editUrl = '';
@@ -234,22 +195,16 @@ def fetch_list_page(page, page_num):
                 const allLinks = row.querySelectorAll('a[href]');
                 for (const link of allLinks) {
                     const href = link.getAttribute('href') || '';
-
-                    // 記事の公開URLからID取得
                     const publicMatch = href.match(/\\/ryu-1992\\/(\\d{4,})\\/?/);
                     if (publicMatch && !articleId) {
                         articleId = publicMatch[1];
                         const linkText = link.textContent.trim();
                         if (linkText.length > 5) title = linkText;
                     }
-
-                    // 編集URLからID取得
                     const editMatch = href.match(/post_id=(\\d+)/) || href.match(/p=(\\d+)/);
                     if (editMatch && !articleId) {
                         articleId = editMatch[1];
                     }
-
-                    // 編集リンク
                     if (href.includes('post_edit') || href.includes('action=edit')) {
                         editUrl = href.startsWith('http') ? href : 'https://wakust.com' + href;
                     }
@@ -257,7 +212,6 @@ def fetch_list_page(page, page_num):
 
                 if (!articleId) continue;
                 if (!title) {
-                    // タイトルセルからテキスト取得
                     for (const cell of cells) {
                         const t = cell.textContent.trim();
                         if (t.length > 10 && !t.includes('販売') && !t.includes('pt')) {
@@ -267,18 +221,14 @@ def fetch_list_page(page, page_num):
                     }
                 }
 
-                // 画像
                 const img = row.querySelector('img');
                 const thumbnail = img ? (img.src || '') : '';
 
-                // 全テキストから各種データを抽出
                 const fullText = row.textContent;
 
-                // カテゴリー
                 let category = '';
                 const catLink = row.querySelector('a[href*="/post-category/"]');
                 if (catLink) category = catLink.textContent.trim();
-                // カテゴリーリンクがなければテキストから推定
                 if (!category) {
                     const areas = ['東京都', '神奈川県', '埼玉県', '千葉県', '新宿', '池袋', '多摩',
                                    '愛知県', '大阪府', '兵庫県', '福岡県', 'ノウハウ(ネット)', 'ノウハウ(リアル)'];
@@ -287,23 +237,18 @@ def fetch_list_page(page, page_num):
                     }
                 }
 
-                // 価格
                 const priceMatch = fullText.match(/([\\d,]+)\\s*pt/);
                 const price = priceMatch ? parseInt(priceMatch[1].replace(/,/g, '')) : 0;
 
-                // PV（全期間）
                 const pvMatch = fullText.match(/全期間\\s*[:：]\\s*([\\d,]+)/);
                 const pvTotal = pvMatch ? parseInt(pvMatch[1].replace(/,/g, '')) : 0;
 
-                // 販売回数
                 const salesCountMatch = fullText.match(/販売回数\\s*[:：]\\s*([\\d,]+)/);
                 const salesCount = salesCountMatch ? parseInt(salesCountMatch[1].replace(/,/g, '')) : 0;
 
-                // 売上
                 const salesAmountMatch = fullText.match(/売上\\s*[:：]\\s*([\\d,]+)\\s*pt/);
                 const salesAmount = salesAmountMatch ? parseInt(salesAmountMatch[1].replace(/,/g, '')) : 0;
 
-                // 投稿日時
                 const dateMatch = fullText.match(/(\\d{4})-(\\d{2})-(\\d{2})/);
                 const postDate = dateMatch ? dateMatch[0] : '';
 
@@ -333,11 +278,9 @@ def fetch_list_page(page, page_num):
 
 def fetch_article_content(page, article):
     """記事の公開ページから無料本文を、編集ページから有料本文を取得"""
-    article_id = article["id"]
     public_url = article["wakust_url"]
     edit_url = article.get("edit_url", "")
 
-    # === 公開ページから無料本文を取得 ===
     print(f"[INFO]   公開ページから無料本文取得...")
     page.goto(public_url, wait_until="networkidle", timeout=60000)
     time.sleep(2)
@@ -377,7 +320,6 @@ def fetch_article_content(page, article):
         }
     """)
 
-    # === 編集ページから有料本文を取得 ===
     paid_content = ""
     if edit_url:
         print(f"[INFO]   編集ページから有料本文取得...")
