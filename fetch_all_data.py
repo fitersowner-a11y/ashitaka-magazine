@@ -189,7 +189,7 @@ def fetch_list_page(page, page_num):
     if page_num == 1:
         url = POST_LIST_URL
     else:
-        url = f"{POST_LIST_URL}&paged={page_num}"
+        url = f"{POST_LIST_URL}&cp={page_num}"
 
     print(f"[INFO] 一覧ページ {page_num} を取得: {url}")
     page.goto(url, wait_until="networkidle", timeout=60000)
