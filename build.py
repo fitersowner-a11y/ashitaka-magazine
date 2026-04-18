@@ -145,7 +145,7 @@ def build_article_pages(articles, template):
     print(f"  記事ページ: {len(articles)}件 生成完了")
 
 
-def build_index(articles, shops, sale_articles):
+def build_index(articles, shops, sale_articles, bestseller_articles):
     index_path = os.path.join(PUBLIC_DIR, "index.html")
     with open(index_path, "r", encoding="utf-8") as f:
         html = f.read()
@@ -175,12 +175,15 @@ def build_index(articles, shops, sale_articles):
         flags=re.DOTALL,
     )
 
-    # 店舗
-    recommended = shops[:4]
-    shops_html = "".join(generate_shop_card(s) for s in recommended)
+    # 売れ筋記事（3x3=9件）
+    if bestseller_articles:
+        bs_cards = "".join(generate_article_card(a) for a in bestseller_articles[:9])
+    else:
+        bs_cards = '<div style="text-align:center;padding:40px;color:#888;">売れ筋データを取得中です。</div>'
+
     html = re.sub(
-        r'(<div class="shops-grid" id="recommendedShops">).*?(</div>\s*</section>)',
-        rf'\1{shops_html}\2',
+        r'(<div class="articles-grid articles-grid-3x3" id="bestsellerArticles">)\s*(</div>)',
+        rf'\1{bs_cards}\2',
         html,
         flags=re.DOTALL,
     )
@@ -328,14 +331,15 @@ def main():
     articles = load_json("articles.json")
     shops = load_json("shops.json")
     sale_articles = load_json("sale_articles.json")
+    bestseller_articles = load_json("bestseller_articles.json")
 
-    print(f"データ: 記事 {len(articles)}件, 店舗 {len(shops)}件, セール {len(sale_articles)}件")
+    print(f"データ: 記事 {len(articles)}件, 店舗 {len(shops)}件, セール {len(sale_articles)}件, 売れ筋 {len(bestseller_articles)}件")
 
     article_template = load_template("article.html")
 
     if articles:
         build_article_pages(articles, article_template)
-    build_index(articles, shops, sale_articles)
+    build_index(articles, shops, sale_articles, bestseller_articles)
     build_articles_list(articles)
 
     if shops:

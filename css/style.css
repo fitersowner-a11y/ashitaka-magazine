@@ -180,6 +180,14 @@ a:hover {
   color: #ff6b35;
 }
 
+.section-title.amber {
+  border-bottom-color: var(--accent-amber);
+}
+
+.articles-grid-3x3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .section-more {
   font-size: 13px;
   color: var(--primary);
