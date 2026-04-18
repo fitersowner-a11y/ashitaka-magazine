@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-ワクスト自動投稿スクリプト (auto_post.py) v4
+ワクスト自動投稿スクリプト (auto_post.py) v5
 
-v3からの修正:
-- ページネーション対応: 全ページを巡回して記事を取得（20件/ページ）
+v4からの修正:
+- ページネーション: paged → cp パラメータに修正
 """
 
 import json
@@ -20,7 +20,7 @@ from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeo
 BASE_URL = "https://wakust.com/user/ryu-1992/?sort=postd"
 ARTICLES_JSON = Path(__file__).parent / "data" / "articles.json"
 MAX_POSTS_PER_RUN = 3
-MAX_PAGES = 10  # 最大巡回ページ数（安全弁）
+MAX_PAGES = 10
 EXCERPT_MAX_CHARS = 500
 DEFAULT_USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -67,7 +67,6 @@ def accept_age_modal(page):
 
 
 def extract_articles_from_page(page):
-    """現在のページから記事リンクを抽出"""
     return page.evaluate("""
         () => {
             const results = [];
@@ -101,25 +100,15 @@ def extract_articles_from_page(page):
 
 
 def has_next_page(page):
-    """次のページがあるかを確認"""
     return page.evaluate("""
         () => {
-            // 「次」「>」「>>」「次へ」のリンクを探す
             const links = document.querySelectorAll('a[href]');
-            for (const link of links) {
-                const href = link.getAttribute('href') || '';
-                const text = (link.textContent || '').trim();
-                // paged パラメータが含まれるリンク
-                if (href.includes('paged=') && (text === '次' || text === '>' || text === '>>' || text === '次へ' || text === '›' || text === '»')) {
-                    return true;
-                }
-            }
-            // または paged= の数字が現在より大きいリンクがあるか
-            const currentMatch = window.location.search.match(/paged=(\\d+)/);
+            const currentMatch = window.location.search.match(/cp=(\\d+)/);
             const currentPage = currentMatch ? parseInt(currentMatch[1]) : 1;
+
             for (const link of links) {
                 const href = link.getAttribute('href') || '';
-                const pageMatch = href.match(/paged=(\\d+)/);
+                const pageMatch = href.match(/cp=(\\d+)/);
                 if (pageMatch && parseInt(pageMatch[1]) > currentPage) {
                     return true;
                 }
@@ -130,7 +119,6 @@ def has_next_page(page):
 
 
 def fetch_all_articles(page):
-    """全ページを巡回して記事一覧を取得"""
     page.context.add_cookies([
         {"name": "age_check", "value": "1", "domain": ".wakust.com", "path": "/"},
         {"name": "adult_check", "value": "1", "domain": ".wakust.com", "path": "/"},
@@ -143,7 +131,7 @@ def fetch_all_articles(page):
         if page_num == 1:
             url = BASE_URL
         else:
-            url = f"{BASE_URL}&paged={page_num}"
+            url = f"{BASE_URL}&cp={page_num}"
 
         print(f"[INFO] ページ {page_num} を取得: {url}")
         page.goto(url, wait_until="networkidle", timeout=60000)
@@ -155,7 +143,6 @@ def fetch_all_articles(page):
 
         articles = extract_articles_from_page(page)
 
-        # 新しい記事がなければ最終ページ
         new_count = 0
         for a in articles:
             if a["id"] not in seen_ids:
@@ -169,19 +156,17 @@ def fetch_all_articles(page):
             print("[INFO] 新しい記事がないため、巡回を終了")
             break
 
-        # 次のページがあるか確認
         if not has_next_page(page):
             print("[INFO] 最終ページに到達")
             break
 
-        time.sleep(2)  # サーバー負荷軽減
+        time.sleep(2)
 
     print(f"[INFO] 全ページ合計: {len(all_articles)}件")
     return all_articles
 
 
 def fetch_article_detail(page, article_url):
-    """記事詳細ページから本文、日付、カテゴリー、サムネイルを取得"""
     print(f"[INFO] 記事詳細を取得: {article_url}")
     page.goto(article_url, wait_until="networkidle", timeout=60000)
     time.sleep(2)
@@ -360,7 +345,6 @@ def main():
         page = context.new_page()
 
         try:
-            # 全ページ巡回して記事一覧取得
             articles = fetch_all_articles(page)
             if not articles:
                 print("[WARN] 記事が取得できませんでした。終了します。")
