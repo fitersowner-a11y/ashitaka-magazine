@@ -1,0 +1,63 @@
+name: Fetch all article data
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: '実行モード'
+        required: true
+        default: 'update-only'
+        type: choice
+        options:
+          - 'update-only'
+          - 'full'
+          - 'skip-content'
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install --break-system-packages playwright
+          playwright install chromium
+          playwright install-deps chromium
+
+      - name: Fetch all article data
+        env:
+          WAKUST_EMAIL: ${{ secrets.WAKUST_EMAIL }}
+          WAKUST_PASSWORD: ${{ secrets.WAKUST_PASSWORD }}
+        run: |
+          if [ "${{ github.event.inputs.mode }}" = "skip-content" ]; then
+            python3 fetch_all_data.py --skip-content
+          elif [ "${{ github.event.inputs.mode }}" = "update-only" ]; then
+            python3 fetch_all_data.py --update-only
+          else
+            python3 fetch_all_data.py
+          fi
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/all_articles_data.json
+          if git diff --staged --quiet; then
+            echo "変更なし"
+          else
+            git commit -m "data: update all_articles_data.json $(date +'%Y-%m-%d')"
+            git push
+          fi
