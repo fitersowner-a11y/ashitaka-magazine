@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """
-ワクスト全記事データ取得スクリプト (fetch_all_data.py) v4
+ワクスト全記事データ取得スクリプト (fetch_all_data.py) v5
 
-v3からの修正:
-- 年齢確認ボタン: id="age-verify-yes" を使用
-- モーダル閉じ待ちを十分に取る
+v4からの修正:
+- ページネーション判定: 取得件数が20件未満なら最終ページと判定（シンプル＆確実）
 """
 
 import json
@@ -47,18 +46,12 @@ def save_data(articles_dict):
 
 
 def accept_age_modal(page):
-    """年齢確認モーダルを閉じる"""
     for attempt in range(3):
         try:
             clicked = page.evaluate("""
                 () => {
-                    // id="age-verify-yes" のボタンを探す
                     const btn = document.querySelector('#age-verify-yes');
-                    if (btn) {
-                        btn.click();
-                        return 'age-verify-yes';
-                    }
-                    // フォールバック: テキストで探す
+                    if (btn) { btn.click(); return 'age-verify-yes'; }
                     const els = document.querySelectorAll('a, button, span, div');
                     for (const el of els) {
                         if ((el.textContent || '').trim() === 'はい') {
@@ -79,17 +72,14 @@ def accept_age_modal(page):
 
 
 def login(page):
-    """ワクストにログイン"""
     print("[INFO] ログイン中...")
     page.goto(LOGIN_URL, wait_until="networkidle", timeout=60000)
     time.sleep(3)
 
-    # 年齢確認を先に処理（十分待つ）
     print("[INFO] 年齢確認処理中...")
     accept_age_modal(page)
     time.sleep(3)
 
-    # フォームが操作可能か確認
     form_check = page.evaluate("""
         () => {
             const emailInput = document.querySelector('input[name="login_email"]');
@@ -104,13 +94,11 @@ def login(page):
     """)
     print(f"[DEBUG] フォーム状態: {json.dumps(form_check)}")
 
-    # モーダルがまだ残っている場合、もう一度試す
     if not form_check.get("emailVisible"):
         print("[INFO] フォームがまだ非表示。年齢確認を再試行...")
         accept_age_modal(page)
         time.sleep(3)
 
-    # メールアドレス入力
     email_filled = page.evaluate(f"""
         () => {{
             const email = {json.dumps(WAKUST_EMAIL)};
@@ -127,7 +115,6 @@ def login(page):
     """)
     print(f"[DEBUG] メールアドレス入力: {email_filled}")
 
-    # パスワード入力
     pw_filled = page.evaluate(f"""
         () => {{
             const pw = {json.dumps(WAKUST_PASSWORD)};
@@ -148,7 +135,6 @@ def login(page):
         print("[ERROR] ログインフォームが見つかりません")
         return False
 
-    # ログインボタンをクリック
     page.evaluate("""
         () => {
             const submitBtn = document.querySelector('.login_submit');
@@ -170,7 +156,6 @@ def login(page):
     accept_age_modal(page)
     time.sleep(1)
 
-    # ログイン確認
     current_url = page.url
     print(f"[DEBUG] ログイン後URL: {current_url}")
 
@@ -185,7 +170,6 @@ def login(page):
 
 
 def fetch_list_page(page, page_num):
-    """管理画面の記事一覧から1ページ分のデータを取得"""
     if page_num == 1:
         url = POST_LIST_URL
     else:
@@ -316,7 +300,6 @@ def fetch_list_page(page, page_num):
 
 
 def fetch_article_content(page, article):
-    """記事の公開ページから無料本文を、編集ページから有料本文を取得"""
     public_url = article["wakust_url"]
     edit_url = article.get("edit_url", "")
 
@@ -456,19 +439,11 @@ def main():
                         all_articles[aid]["free_content"] = ""
                         all_articles[aid]["paid_content"] = ""
 
-                has_next = page.evaluate("""
-                    () => {
-                        const links = document.querySelectorAll('a[href]');
-                        for (const link of links) {
-                            const text = (link.textContent || '').trim();
-                            if (text === '>' || text === '›' || text === '次' || text === '»') return true;
-                        }
-                        return false;
-                    }
-                """)
-                if not has_next:
-                    print("[INFO] 最終ページに到達")
+                # 20件未満なら最終ページ
+                if len(articles) < 20:
+                    print("[INFO] 最終ページに到達（20件未満）")
                     break
+
                 time.sleep(2)
 
             print(f"\n[INFO] 全記事数: {len(all_articles)}件")
