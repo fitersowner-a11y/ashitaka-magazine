@@ -175,9 +175,23 @@ a:hover {
   border-bottom-color: var(--accent-red);
 }
 
+.section-title.sale {
+  border-bottom-color: #ff6b35;
+  color: #ff6b35;
+}
+
 .section-more {
   font-size: 13px;
   color: var(--primary);
+}
+
+/* ===== ARTICLE FILTER ===== */
+.article-card[data-area] {
+  transition: opacity 0.2s, transform 0.15s;
+}
+
+.article-card.hidden-by-filter {
+  display: none;
 }
 
 /* ===== ARTICLE CARDS ===== */
