@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 ビルドスクリプト v4
 
@@ -649,6 +649,15 @@ def main():
         shutil.rmtree(PUBLIC_DIR)
 
     # 静的ファイルコピー
+    # Search Console / Bing Webmaster認証ファイルを自動コピー
+    import glob
+    for pattern in ["google*.html", "BingSiteAuth.xml", "yandex_*.html"]:
+        for verification_file in glob.glob(os.path.join(SITE_DIR, pattern)):
+            dst = os.path.join(PUBLIC_DIR, os.path.basename(verification_file))
+            os.makedirs(PUBLIC_DIR, exist_ok=True)
+            shutil.copy2(verification_file, dst)
+            print(f"  認証ファイル: {os.path.basename(verification_file)} コピー完了")
+
     for item in ["index.html", "css", "images", "CNAME"]:
         src = os.path.join(SITE_DIR, item)
         dst = os.path.join(PUBLIC_DIR, item)
