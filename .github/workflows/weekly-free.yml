@@ -23,8 +23,19 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install dependencies
+        run: pip install --break-system-packages tweepy
+
       - name: Select free article
         run: python3 select_free_article.py
+
+      - name: Tweet free article
+        env:
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+        run: python3 tweet_free_article.py
 
       - name: Commit and push
         run: |
