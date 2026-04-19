@@ -1,16 +1,10 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" prefix="og: https://ogp.me/ns# article: https://ogp.me/ns/article#">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{TITLE}} | メンエス好きのアシタカマガジン</title>
-  <meta name="description" content="{{EXCERPT}}">
+  {{HEAD_META}}
   <link rel="stylesheet" href="/css/style.css">
-  <meta property="og:title" content="{{TITLE}}">
-  <meta property="og:description" content="{{EXCERPT}}">
-  <meta property="og:url" content="https://menesthe-ashitaka.com/articles/{{SLUG}}/">
-  <meta property="og:type" content="article">
-  <meta name="twitter:card" content="summary_large_image">
+  {{JSON_LD}}
+  {{GA4_TAG}}
 </head>
 <body>
 
@@ -25,6 +19,7 @@
         <ul class="site-nav" id="siteNav">
           <li><a href="/">ホーム</a></li>
           <li><a href="/articles/" class="active">記事一覧</a></li>
+          <li><a href="/areas/">エリア</a></li>
           <li><a href="/shops/">店舗紹介</a></li>
           <li><a href="/about/">About</a></li>
         </ul>
@@ -33,9 +28,11 @@
   </header>
 
   <main class="container">
+    {{BREADCRUMB_HTML}}
+
     <article class="article-detail">
       <div class="article-header">
-        <p class="article-date">{{DATE}} ・ {{AREA}}</p>
+        <p class="article-date">{{DATE}} ・ <a href="/areas/{{AREA_SLUG}}/">{{AREA_DISPLAY}}</a></p>
         <h1>{{TITLE}}</h1>
       </div>
 
@@ -51,9 +48,12 @@
         </a>
       </div>
 
+      <!-- エリアナビゲーション（内部リンク強化） -->
+      {{AREA_NAV_BLOCK}}
+
       <!-- 関連記事 -->
       <div style="margin-top: 40px;">
-        <h2 class="section-title" style="font-size: 16px;">関連記事</h2>
+        <h2 class="section-title" style="font-size: 16px;">関連する{{AREA_DISPLAY}}のレポート</h2>
         <div class="articles-grid" style="margin-top: 16px;">
           {{RELATED_ARTICLES}}
         </div>
@@ -65,6 +65,7 @@
     <ul class="footer-links">
       <li><a href="/">ホーム</a></li>
       <li><a href="/articles/">記事一覧</a></li>
+      <li><a href="/areas/">エリア一覧</a></li>
       <li><a href="/shops/">店舗紹介</a></li>
       <li><a href="/about/">About</a></li>
       <li><a href="https://wakust.com/" target="_blank" rel="noopener">ワクスト</a></li>

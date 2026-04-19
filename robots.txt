@@ -1,0 +1,101 @@
+# robots.txt for menesthe-ashitaka.com
+# Last updated: 2026-04-19
+
+# ============================================
+# 通常の検索エンジン（Google / Bing / DuckDuckGo）
+# ============================================
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+# ============================================
+# AI検索エンジン（SGE/Perplexity/ChatGPT対応）
+# ============================================
+# GoogleのAI検索用クローラー（SGE対応）
+User-agent: Google-Extended
+Allow: /
+
+# Bing / Copilot 用
+User-agent: Bingbot
+Allow: /
+
+# Perplexity
+User-agent: PerplexityBot
+Allow: /
+
+# ChatGPT検索（ChatGPTの検索機能で引用される）
+User-agent: OAI-SearchBot
+Allow: /
+
+# Anthropic Claude検索用（将来対応）
+User-agent: ClaudeBot
+Allow: /
+
+# ============================================
+# SNSクローラー（OGP取得のため必須）
+# ============================================
+User-agent: Twitterbot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+# ============================================
+# ブロックするクローラー
+# ============================================
+
+# GPTBot（ChatGPTの訓練データ収集）
+# ※検索用のOAI-SearchBotとは別なのでブロックしてOK
+User-agent: GPTBot
+Disallow: /
+
+# CCBot（Common Crawl）
+# ※訓練データに使われたくない場合はブロック
+User-agent: CCBot
+Disallow: /
+
+# Amazonbot（Alexaの訓練データ）
+User-agent: Amazonbot
+Disallow: /
+
+# 悪質なスクレイピングボット
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+# ============================================
+# デフォルト（その他全てのクローラー）
+# ============================================
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /private/
+Disallow: /*.json$
+Disallow: /_build/
+Disallow: /_temp/
+
+# ============================================
+# サイトマップ
+# ============================================
+Sitemap: https://menesthe-ashitaka.com/sitemap.xml

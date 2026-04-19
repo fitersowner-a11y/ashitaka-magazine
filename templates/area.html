@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ja" prefix="og: https://ogp.me/ns#">
+<head>
+  {{HEAD_META}}
+  <link rel="stylesheet" href="/css/style.css">
+  {{JSON_LD}}
+  {{GA4_TAG}}
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="/" class="site-logo">
+        メンエス好きのアシタカマガジン
+        <small>by ワクスト</small>
+      </a>
+      <button class="mobile-menu-btn" onclick="toggleMenu()" aria-label="メニュー">☰</button>
+      <nav>
+        <ul class="site-nav" id="siteNav">
+          <li><a href="/">ホーム</a></li>
+          <li><a href="/articles/">記事一覧</a></li>
+          <li><a href="/areas/" class="active">エリア</a></li>
+          <li><a href="/shops/">店舗紹介</a></li>
+          <li><a href="/about/">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    {{BREADCRUMB_HTML}}
+
+    <section class="area-hero">
+      <h1>{{AREA_NAME}}のメンエス厳選レポート {{COUNT}}件</h1>
+      <div class="area-intro">
+        {{AREA_INTRO}}
+      </div>
+    </section>
+
+    <!-- 系統別フィルター -->
+    <section class="area-filters">
+      <h2 class="section-title" style="font-size: 14px; margin-bottom: 8px;">系統で絞り込む</h2>
+      <div class="shops-filter">
+        <button class="filter-btn active" data-filter="all">すべて（{{COUNT}}）</button>
+        {{GENRE_FILTER_BUTTONS}}
+      </div>
+    </section>
+
+    <!-- 記事カード一覧 -->
+    <section class="articles-section">
+      <div class="articles-grid" id="areaArticlesList">
+        {{ARTICLE_CARDS}}
+      </div>
+    </section>
+
+    <!-- 他エリアナビ -->
+    <section style="margin-top: 40px; padding: 20px; background: #f7f9fc; border-radius: 8px; line-height: 1.8;">
+      <h2 class="section-title" style="font-size: 16px; margin-top: 0;">📍 他のエリアを見る</h2>
+      {{OTHER_AREAS_NAV}}
+      <p style="margin-top: 12px;"><a href="/areas/">エリア一覧をすべて見る →</a></p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <ul class="footer-links">
+      <li><a href="/">ホーム</a></li>
+      <li><a href="/articles/">記事一覧</a></li>
+      <li><a href="/areas/">エリア一覧</a></li>
+      <li><a href="/shops/">店舗紹介</a></li>
+      <li><a href="/about/">About</a></li>
+      <li><a href="https://wakust.com/" target="_blank" rel="noopener">ワクスト</a></li>
+    </ul>
+    <p class="footer-copy">&copy; 2026 メンエス好きのアシタカマガジン ・ Powered by ワクスト</p>
+  </footer>
+
+  <script>
+    function toggleMenu() {
+      document.getElementById('siteNav').classList.toggle('open');
+    }
+
+    // 系統別フィルター
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const filter = btn.getAttribute('data-filter');
+        document.querySelectorAll('#areaArticlesList .article-card').forEach(card => {
+          if (filter === 'all') {
+            card.classList.remove('hidden-by-filter');
+          } else {
+            const genres = (card.getAttribute('data-genres') || '').split(' ');
+            if (genres.includes(filter)) {
+              card.classList.remove('hidden-by-filter');
+            } else {
+              card.classList.add('hidden-by-filter');
+            }
+          }
+        });
+      });
+    });
+  </script>
+
+</body>
+</html>
