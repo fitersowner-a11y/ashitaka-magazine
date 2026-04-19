@@ -49,11 +49,15 @@ jobs:
         if: ${{ github.event.inputs.dry_run != 'true' }}
         run: python3 fetch_bestsellers.py
 
+      - name: Sync sale articles
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: python3 sync_sale.py
+
       - name: Commit and push if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/articles.json data/bestseller_articles.json
+          git add data/articles.json data/bestseller_articles.json data/sale_articles.json
           if git diff --staged --quiet; then
             echo "変更なし"
           else
