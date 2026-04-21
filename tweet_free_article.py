@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
 """
 今週の無料記事 告知ツイートスクリプト (tweet_free_article.py)
-
 select_free_article.py で選定された無料記事を X(Twitter) に告知する。
 weekly-free.yml の中で select_free_article.py の直後に実行される。
 """
-
 import json
 import os
+import re
 import sys
 import time
 import logging
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
-
 import tweepy
 
 FREE_ARTICLE_JSON = Path(__file__).parent / "data" / "free_article.json"
@@ -25,6 +23,40 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger(__name__)
+
+# ─────────────────────────────────────────
+# タイトルマスキング（Xルール対策）
+# ─────────────────────────────────────────
+MASK_WORDS = [
+    "本番", "NN", "生中", "中出し", "ドクドク", "ぶちまけ",
+    "射精", "発射", "精子", "ザーメン", "フェラ", "パイズリ",
+    "素股", "手コキ", "乳首", "おっぱい", "巨乳", "爆乳",
+    "Eカップ", "Fカップ", "Gカップ", "Hカップ", "Iカップ", "Jカップ",
+    "Dカップ",
+    "鼠蹊部", "CKB", "BK", "半BK", "全BK",
+    "密着", "跨", "挿入", "腰グラインド",
+    "理性崩壊", "理性がぶっ壊", "理性を奪",
+    "欲求不満", "変態", "痴女", "淫乱",
+    "抜き", "ヌキ", "抜いて", "イかせ", "イった", "イキ",
+    "エロい", "エロ", "テロ級にエロ",
+    "ムチャクチャやった", "ぶっ壊", "襲いたく",
+    "セクシー", "妖艶",
+]
+CUP_PATTERN = re.compile(r'[A-K]カップ')
+
+def mask_title(title):
+    masked = title
+    masked = CUP_PATTERN.sub('○カップ', masked)
+    sorted_words = sorted(MASK_WORDS, key=len, reverse=True)
+    for word in sorted_words:
+        if word in masked:
+            replacement = "○" * max(2, len(word))
+            masked = masked.replace(word, replacement)
+    masked = re.sub(r'○{3,}', '○○', masked)
+    masked = re.sub(r'[【\[（\(][○\s]*[】\]）\)]', '', masked)
+    masked = re.sub(r'/○○/', '/', masked)
+    masked = masked.strip('/ ')
+    return masked
 
 
 def get_x_client():
@@ -39,11 +71,10 @@ def get_x_client():
 
 def build_tweet(article):
     title = article.get("title", "")
+    title = mask_title(title)
     slug = article.get("slug", "")
-    area = article.get("area", "")
     url = f"{SITE_URL}/articles/{slug}/"
 
-    # タイトルが長い場合は省略
     max_title = 60
     if len(title) > max_title:
         title = title[:max_title] + "…"
@@ -52,7 +83,7 @@ def build_tweet(article):
         f"📖 今週の無料公開記事！\n\n"
         f"「{title}」\n\n"
         f"通常は有料の記事を、今週限定で全文無料公開中です。\n"
-        f"月曜0時まで 読めます。\n\n"
+        f"月曜0時まで読めます。\n\n"
         f"👉 {url}\n\n"
         f"#ワクスト #無料公開 #メンエス"
     )
