@@ -16,7 +16,7 @@ def _xml_escape(s):
     return html.escape(s, quote=True) if s else ""
 
 
-def build_sitemap(articles, shops, area_groups, free_article=None):
+def build_sitemap(articles, shops, area_groups, free_article=None, beginner_guide_data=None):
     """
     v3のbuild_sitemap相当だが、大幅に拡張。
 
@@ -24,6 +24,7 @@ def build_sitemap(articles, shops, area_groups, free_article=None):
     shops: 店舗のリスト
     area_groups: lib.area.group_articles_by_area() の戻り値
     free_article: 無料公開中の記事（高優先度）
+    beginner_guide_data: beginner_guide.build_all() の戻り値（初心者ガイドURL追加用）
     """
     now = datetime.now().strftime("%Y-%m-%d")
     urls = []
@@ -124,6 +125,23 @@ def build_sitemap(articles, shops, area_groups, free_article=None):
             changefreq="monthly",
             priority="0.5",
         ))
+
+    # --- 初心者ガイド ---
+    if beginner_guide_data and beginner_guide_data.get("episodes"):
+        from lib.beginner_guide import get_sitemap_urls as _bg_sitemap_urls
+        bg_urls = _bg_sitemap_urls(beginner_guide_data["episodes"], SITE_URL)
+        for entry in bg_urls:
+            images = entry.get("images", [])
+            image_url = images[0]["loc"] if images else None
+            image_title = images[0].get("title") if images else None
+            urls.append(_url_entry(
+                loc=entry["loc"],
+                lastmod=entry["lastmod"],
+                changefreq=entry["changefreq"],
+                priority=entry["priority"],
+                image_url=image_url,
+                image_title=image_title,
+            ))
 
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n'

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ja" prefix="og: https://ogp.me/ns#">
+<head>
+  {{HEAD_META}}
+  <link rel="stylesheet" href="/css/style.css">
+  {{JSON_LD}}
+  {{GA4_TAG}}
+  <style>
+    .bg-series-header { text-align:center; padding:32px 0 20px; }
+    .bg-series-header h1 { font-size:24px; margin-bottom:10px; }
+    .bg-catchcopy { color:#555; font-size:16px; margin-bottom:8px; }
+    .bg-series-desc { color:#666; font-size:14px; line-height:1.8; max-width:640px; margin:0 auto; }
+    .bg-char-link-card { display:flex; align-items:center; gap:16px; padding:20px; background:#f0f4ff; border-radius:12px; text-decoration:none; color:inherit; margin:20px 0 28px; transition:all .15s; }
+    .bg-char-link-card:hover { background:#dbeafe; }
+    .bg-char-link-card .icon { font-size:32px; flex-shrink:0; }
+    .bg-char-link-card strong { display:block; font-size:16px; margin-bottom:4px; color:#1d4ed8; }
+    .bg-char-link-card span { font-size:13px; color:#555; }
+    .bg-filter { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 20px; }
+    .bg-episode-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:20px; }
+    .bg-episode-card { display:flex; flex-direction:column; background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; text-decoration:none; color:inherit; transition:all .15s; }
+    .bg-episode-card:hover { border-color:var(--primary,#3B82F6); transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,.08); }
+    .bg-episode-card.hidden-by-filter { display:none !important; }
+    .bg-episode-thumb { position:relative; background:#f1f5f9; overflow:hidden; }
+    .bg-episode-thumb img { width:100%; height:180px; object-fit:cover; display:block; }
+    .bg-episode-thumb .bg-ep-badge { position:absolute; top:8px; left:8px; }
+    .bg-episode-body { padding:16px; flex:1; display:flex; flex-direction:column; gap:6px; }
+    .bg-episode-title { font-size:16px; font-weight:bold; margin:4px 0; }
+    .bg-episode-subtitle { font-size:13px; color:#555; margin:0; }
+    .bg-episode-desc { font-size:13px; color:#777; margin:4px 0; flex:1; }
+    .bg-episode-tags { margin-top:4px; }
+    .bg-ep-badge { display:inline-block; background:var(--primary,#3B82F6); color:#fff; font-size:12px; font-weight:bold; padding:2px 8px; border-radius:4px; }
+    .bg-cat-label { display:inline-block; font-size:11px; padding:2px 8px; border-radius:4px; font-weight:bold; }
+    .bg-cat-basics { background:#dbeafe; color:#1d4ed8; }
+    .bg-cat-price  { background:#d1fae5; color:#065f46; }
+    .bg-cat-area   { background:#fed7aa; color:#9a3412; }
+    .bg-tag { display:inline-block; background:#f1f5f9; color:#475569; font-size:11px; padding:2px 8px; border-radius:4px; margin:2px; }
+    .bg-cta { margin-top:48px; padding:24px; background:#f7f9fc; border-radius:12px; text-align:center; }
+    .bg-cta h2 { font-size:18px; margin-bottom:12px; }
+    .bg-cta-links { display:flex; justify-content:center; gap:12px; flex-wrap:wrap; }
+    .bg-cta-links a { padding:10px 20px; border:1px solid var(--primary,#3B82F6); border-radius:8px; color:var(--primary,#3B82F6); text-decoration:none; font-size:14px; transition:all .15s; }
+    .bg-cta-links a:hover { background:var(--primary,#3B82F6); color:#fff; }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="/" class="site-logo">メンエス好きのアシタカマガジン<small>by ワクスト</small></a>
+      <button class="mobile-menu-btn" onclick="toggleMenu()" aria-label="メニュー">☰</button>
+      <nav>
+        <ul class="site-nav" id="siteNav">
+          <li><a href="/">ホーム</a></li>
+          <li><a href="/articles/">記事一覧</a></li>
+          <li><a href="/areas/">エリア</a></li>
+          <li><a href="/beginner-guide/" class="active">初心者ガイド</a></li>
+          <li><a href="/shops/">店舗紹介</a></li>
+          <li><a href="/about/">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    {{BREADCRUMB_HTML}}
+
+    <section class="bg-series-header">
+      <h1>{{SERIES_TITLE}}</h1>
+      <p class="bg-catchcopy">{{CATCHCOPY}}</p>
+      <p class="bg-series-desc">{{SERIES_DESCRIPTION}}</p>
+    </section>
+
+    <!-- キャラクター紹介リンク -->
+    <a href="/beginner-guide/characters/" class="bg-char-link-card" aria-label="キャラクター紹介ページへ">
+      <div class="icon">👥</div>
+      <div>
+        <strong>師匠と後輩くんって誰？</strong>
+        <span>キャラクター紹介ページを見る →</span>
+      </div>
+    </a>
+
+    <!-- カテゴリフィルター -->
+    <div class="bg-filter shops-filter" role="group" aria-label="カテゴリ絞り込み">
+      {{CATEGORY_TABS}}
+    </div>
+
+    <!-- エピソードカード一覧 -->
+    <section aria-label="エピソード一覧">
+      <div class="bg-episode-grid" id="episodeGrid">
+        {{EPISODE_CARDS}}
+      </div>
+    </section>
+
+    <!-- 末尾CTA -->
+    <div class="bg-cta">
+      <h2>もっとメンエスを探す</h2>
+      <div class="bg-cta-links">
+        <a href="/articles/">記事一覧</a>
+        <a href="/areas/">エリアで探す</a>
+        <a href="https://wakust.com/user/ryu-1992/" target="_blank" rel="noopener">ワクストで記事を読む</a>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <ul class="footer-links">
+      <li><a href="/">ホーム</a></li>
+      <li><a href="/articles/">記事一覧</a></li>
+      <li><a href="/areas/">エリア一覧</a></li>
+      <li><a href="/beginner-guide/">初心者ガイド</a></li>
+      <li><a href="/shops/">店舗紹介</a></li>
+      <li><a href="/about/">About</a></li>
+      <li><a href="https://wakust.com/" target="_blank" rel="noopener">ワクスト</a></li>
+    </ul>
+    <p class="footer-copy">&copy; 2026 メンエス好きのアシタカマガジン ・ Powered by ワクスト</p>
+  </footer>
+
+  <script>
+    function toggleMenu() { document.getElementById('siteNav').classList.toggle('open'); }
+    document.querySelectorAll('.bg-filter .filter-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.bg-filter .filter-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        var filter = btn.getAttribute('data-filter');
+        document.querySelectorAll('#episodeGrid .bg-episode-card').forEach(function(card) {
+          if (filter === 'all' || card.getAttribute('data-category') === filter) {
+            card.classList.remove('hidden-by-filter');
+          } else {
+            card.classList.add('hidden-by-filter');
+          }
+        });
+      });
+    });
+  </script>
+
+</body>
+</html>

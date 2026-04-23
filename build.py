@@ -46,6 +46,7 @@ from lib.seo import (
 )
 from lib.sitemap import build_sitemap as build_sitemap_v2
 from lib.area_page import build_area_page, build_area_index_page
+from lib import beginner_guide
 
 
 DATA_DIR = os.path.join(SITE_DIR, "data")
@@ -517,8 +518,8 @@ def build_shops_list(shops):
 # sitemap.xml / robots.txt（v4 拡張版）
 # ============================================================
 
-def build_sitemap_and_robots(articles, shops, area_groups, free_article):
-    sitemap_xml, count = build_sitemap_v2(articles, shops, area_groups, free_article)
+def build_sitemap_and_robots(articles, shops, area_groups, free_article, bg_result=None):
+    sitemap_xml, count = build_sitemap_v2(articles, shops, area_groups, free_article, bg_result)
     with open(os.path.join(PUBLIC_DIR, "sitemap.xml"), "w", encoding="utf-8") as f:
         f.write(sitemap_xml)
     print(f"  sitemap.xml: {count}件 生成完了")
@@ -709,13 +710,41 @@ def main():
     build_area_index_page(area_groups, PUBLIC_DIR, ga4_tag)
     print("  エリア一覧トップ: 生成完了")
 
+    # 初心者ガイド生成
+    bg_templates = {
+        "index":      load_template("beginner_guide_index.html"),
+        "episode":    load_template("beginner_guide_episode.html"),
+        "characters": load_template("beginner_guide_characters.html"),
+    }
+    bg_data_path = os.path.join(DATA_DIR, "beginner_guide.json")
+    if os.path.exists(bg_data_path):
+        bg_result = beginner_guide.build_all(
+            data_path=bg_data_path,
+            all_articles=articles,
+            area_data=area_groups,
+            templates=bg_templates,
+            output_dir=os.path.join(PUBLIC_DIR, "beginner-guide"),
+            ga4_tag=ga4_tag,
+        )
+        # 画像ソース（リポジトリ管理）→ public へコピー
+        src_bg_images = os.path.join(SITE_DIR, "beginner-guide", "images")
+        dst_bg_images = os.path.join(PUBLIC_DIR, "beginner-guide", "images")
+        if os.path.isdir(src_bg_images):
+            if os.path.exists(dst_bg_images):
+                shutil.rmtree(dst_bg_images)
+            shutil.copytree(src_bg_images, dst_bg_images)
+            print("  初心者ガイド画像: コピー完了")
+    else:
+        print("  警告: data/beginner_guide.json が見つかりません。初心者ガイドをスキップ。")
+        bg_result = None
+
     if free_article and free_article.get("title"):
         build_free_article_page(free_article, article_template, articles)
 
     if shops:
         build_shops_list(shops)
 
-    build_sitemap_and_robots(articles, shops, area_groups, free_article)
+    build_sitemap_and_robots(articles, shops, area_groups, free_article, bg_result)
 
     print("=== ビルド完了 (v4) ===")
     print(f"出力先: {PUBLIC_DIR}")
