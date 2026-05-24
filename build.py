@@ -538,10 +538,72 @@ def build_sitemap_and_robots(articles, shops, area_groups, free_article, bg_resu
 
 
 # ============================================================
-# 無料記事の全文ページ（v3互換・SEO強化）
+# 無料記事の全文ページ（v4.1 重複除去版）
 # ============================================================
 
+def _split_free_content(free_text):
+    """free_contentを「無料部分」と「有料部分テキスト」に分割する。
+    ワクストの「---ここから先は有料記事です---」マーカーを境界として使用。
+    マーカーがなければ全文を無料部分として返す。
+    """
+    PAYWALL_MARKERS = [
+        "---ここから先は有料記事です---",
+        "ここから先は有料記事です",
+        "---有料記事---",
+    ]
+    for marker in PAYWALL_MARKERS:
+        if marker in free_text:
+            parts = free_text.split(marker, 1)
+            return parts[0].strip(), parts[1].strip()
+    return free_text.strip(), ""
+
+
+def _strip_html_to_plain(html_text):
+    """HTMLタグ・エンティティを除去してプレーンテキストにする（重複比較用）"""
+    text = re.sub(r'<[^>]+>', '', html_text)
+    # HTMLエンティティを戻す
+    for entity, char in [('&hellip;', '…'), ('&nbsp;', ' '), ('&amp;', '&'),
+                         ('&lt;', '<'), ('&gt;', '>'), ('&quot;', '"'),
+                         ('&darr;', '↓'), ('&uarr;', '↑')]:
+        text = text.replace(entity, char)
+    # 空白・改行を全除去して比較用テキストに
+    text = re.sub(r'\s+', '', text)
+    return text
+
+
+def _remove_nav_garbage(text):
+    """free_contentの末尾にあるワクストのナビゲーション・プロフィール部分を除去"""
+    GARBAGE_MARKERS = [
+        "クリエイターのプロフィール",
+        "記事を読みたい人ガイド",
+        "この記事のURL",
+        "おすすめタグ",
+        "© ワクスト",
+    ]
+    for marker in GARBAGE_MARKERS:
+        idx = text.find(marker)
+        if idx > 0:
+            text = text[:idx].strip()
+    return text
+
+
 def build_free_article_page(free_article, template, all_articles):
+    """無料記事の全文ページを生成（v4.1 重複除去版）
+
+    データの問題:
+      - free_content に「---ここから先は有料記事です---」マーカーの後ろに
+        有料部分テキストが含まれることがある
+      - paid_content に無料部分のHTMLがそのまま含まれることがある
+      - free_content 末尾にワクストのナビゲーションゴミが付くことがある
+
+    修正ロジック:
+      1. free_content をマーカーで「無料テキスト」と「有料テキスト(from free)」に分割
+      2. ナビゲーションゴミを除去
+      3. paid_content のプレーンテキストと free_part のプレーンテキストを比較
+         → 重複している場合は paid_content から無料部分を除外
+      4. 有料部分の決定: paid_content（重複除去済み）か、
+         マーカー以降のテキスト（paid_from_free）を使用
+    """
     if not free_article or not free_article.get("title"):
         return
 
@@ -550,21 +612,80 @@ def build_free_article_page(free_article, template, all_articles):
     output_dir = os.path.join(PUBLIC_DIR, "articles", slug)
     os.makedirs(output_dir, exist_ok=True)
 
-    # 無料本文 + 有料本文
-    free_text = free_article.get("free_content", "")
-    paid_text = free_article.get("paid_content", "")
+    # --- Step 1: free_content をマーカーで分割 ---
+    raw_free = free_article.get("free_content", "")
+    free_part, paid_from_free = _split_free_content(raw_free)
 
-    if free_text and not free_text.strip().startswith("<"):
-        free_html = "\n".join(f"<p>{p.strip()}</p>" for p in free_text.split("\n") if p.strip())
+    # --- Step 2: ナビゲーションゴミ除去 ---
+    free_part = _remove_nav_garbage(free_part)
+    paid_from_free = _remove_nav_garbage(paid_from_free)
+
+    # --- Step 3: paid_content の重複チェック ---
+    paid_html = free_article.get("paid_content", "")
+    actual_paid_html = ""
+
+    if paid_html:
+        # paid_content のプレーンテキストと free_part のプレーンテキストを比較
+        paid_plain = _strip_html_to_plain(paid_html)
+        free_plain = _strip_html_to_plain(free_part)
+
+        # paid_content が free_part と同じ内容なら → 有料固有の内容なし
+        # paid_content が free_part を含んでいるなら → free_part 以降が有料部分
+        if paid_plain and free_plain:
+            # 先頭100文字で重複判定（完全一致だと微妙な差で漏れるので）
+            check_len = min(100, len(free_plain), len(paid_plain))
+            if check_len > 20 and paid_plain[:check_len] == free_plain[:check_len]:
+                # paid_content は free_part と重複している
+                # → paid_content 全体が無料部分と同じなら、有料固有部分なし
+                if len(paid_plain) <= len(free_plain) * 1.1:
+                    # ほぼ同じ長さ → 重複。paid_from_free を使う
+                    actual_paid_html = ""
+                    print(f"    ⚠ paid_content は free_content と重複 → paid_from_free を使用")
+                else:
+                    # paid_content の方が長い → 後半に有料固有部分がある可能性
+                    # ただし分離が困難なので paid_from_free を優先
+                    actual_paid_html = ""
+                    print(f"    ⚠ paid_content 先頭が重複 → paid_from_free を使用")
+            else:
+                # 重複なし → paid_content をそのまま使用
+                actual_paid_html = paid_html
+        else:
+            actual_paid_html = paid_html
+
+    # --- Step 4: 有料部分の決定 ---
+    # paid_from_free（マーカー以降のテキスト）があればそちらを優先
+    if paid_from_free:
+        final_paid = paid_from_free
+        paid_is_html = False
+    elif actual_paid_html:
+        final_paid = actual_paid_html
+        paid_is_html = True
     else:
-        free_html = free_text
+        final_paid = ""
+        paid_is_html = False
+
+    # --- Step 5: HTML生成 ---
+    # 無料部分のHTML化
+    if free_part and not free_part.strip().startswith("<"):
+        free_html = "\n".join(f"<p>{p.strip()}</p>" for p in free_part.split("\n") if p.strip())
+    else:
+        free_html = free_part
 
     full_content = clean_content(free_html, title)
-    if paid_text:
+
+    if final_paid:
         full_content += '\n<hr style="margin: 2em 0; border: none; border-top: 2px dashed var(--primary);">\n'
         full_content += '<p style="text-align:center; color: var(--primary); font-weight: 500;">▼ ここから有料部分（今週限定で無料公開中！） ▼</p>\n'
-        full_content += clean_content(paid_text, title)
+        if paid_is_html:
+            full_content += clean_content(final_paid, title)
+        else:
+            # プレーンテキスト → HTML化
+            paid_html_lines = "\n".join(
+                f"<p>{p.strip()}</p>" for p in final_paid.split("\n") if p.strip()
+            )
+            full_content += clean_content(paid_html_lines, title)
 
+    # --- 以下はv4と同じ（SEOメタ等） ---
     ga4_tag = generate_ga4_tag()
     info = resolve_area_for_article(free_article)
     area_section = info["name"] if info else free_article.get("area", "")
@@ -631,7 +752,7 @@ def build_free_article_page(free_article, template, all_articles):
     with open(os.path.join(output_dir, "index.html"), "w", encoding="utf-8") as f:
         f.write(html)
 
-    print(f"  無料記事ページ: {title[:40]}... 生成完了（SEO強化）")
+    print(f"  無料記事ページ: {title[:40]}... 生成完了（v4.1 重複除去版）")
 
 
 # ============================================================
